@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.SqlClient;
 using System.Linq;
@@ -7,17 +8,17 @@ namespace Cyber20ShadowServer.Model
 {
     public class BulkUploadToSql<T>
     {
-        public IList<T> InternalStore { get; set; }
+        public IEnumerable<T> InternalStore { get; set; }
         public string TableName { get; set; }
         public int CommitBatchSize { get; set; } = 1000;
         public string ConnectionString { get; set; }
 
         public bool Commit()
         {
-            if (InternalStore.Count > 0)
+            if (InternalStore.Count() > 0)
             {
                 DataTable dt;
-                int numberOfPages = (InternalStore.Count / CommitBatchSize) + (InternalStore.Count % CommitBatchSize == 0 ? 0 : 1);
+                int numberOfPages = (InternalStore.Count() / CommitBatchSize) + (InternalStore.Count() % CommitBatchSize == 0 ? 0 : 1);
                 for (int pageIndex = 0; pageIndex < numberOfPages; pageIndex++)
                 {
                     dt = InternalStore.Skip(pageIndex * CommitBatchSize).Take(CommitBatchSize).ToDataTable();
@@ -30,33 +31,40 @@ namespace Cyber20ShadowServer.Model
 
         public void BulkInsert(DataTable dt)
         {
-            using (SqlConnection connection = new SqlConnection(ConnectionString))
+            try
             {
-                SqlBulkCopy bulkCopy =
-                    new SqlBulkCopy
-                    (
-                        connection,
-                        SqlBulkCopyOptions.TableLock |
-                        SqlBulkCopyOptions.FireTriggers |
-                        SqlBulkCopyOptions.UseInternalTransaction,
-                        null
-                    );
-
-                foreach (DataColumn col in dt.Columns)
+                using (SqlConnection connection = new SqlConnection(ConnectionString))
                 {
-                    if ("Server" != col.ColumnName)
-                    {
-                        bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
-                    }
-                }
-                bulkCopy.DestinationTableName = TableName;
-                connection.Open();
-                bulkCopy.WriteToServer(dt);
-                connection.Close();
-            }
-            // reset
-            //this.dataTable.Clear();
-        }
+                    SqlBulkCopy bulkCopy =
+                        new SqlBulkCopy
+                        (
+                            connection,
+                            SqlBulkCopyOptions.TableLock |
+                            SqlBulkCopyOptions.FireTriggers |
+                            SqlBulkCopyOptions.UseInternalTransaction,
+                            null
+                        );
 
+                    foreach (DataColumn col in dt.Columns)
+                    {
+                        
+                        if ("Server" != col.ColumnName  && "OriginTableCategories" != col.ColumnName)
+                        {
+                            bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
+                        }
+                    }
+                    bulkCopy.DestinationTableName = TableName;
+                    connection.Open();
+                    bulkCopy.WriteToServer(dt);
+                    connection.Close();
+                }
+                // reset
+                //this.dataTable.Clear();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+        }
     }
 }

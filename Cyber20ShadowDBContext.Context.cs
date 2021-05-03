@@ -18,7 +18,8 @@ namespace Cyber20ShadowServer
         public Cyber20ShadowEntities()
             : base("name=Cyber20ShadowEntities")
         {
-            //Configuration.ProxyCreationEnabled = false;
+            Configuration.LazyLoadingEnabled = false;
+            Configuration.ProxyCreationEnabled = false;
         }
 
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
@@ -26,7 +27,10 @@ namespace Cyber20ShadowServer
             throw new UnintentionalCodeFirstException();
         }
 
+        public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<OriginTable> OriginTables { get; set; }
         public virtual DbSet<Server> Servers { get; set; }
+        public virtual DbSet<OriginTableCategory> OriginTableCategories { get; set; }
+        public virtual DbSet<Category> Categories { get; set; }
     }
 }

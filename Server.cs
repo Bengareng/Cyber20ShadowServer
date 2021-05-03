@@ -17,6 +17,7 @@ namespace Cyber20ShadowServer
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public Server()
         {
+            this.Groups = new HashSet<Group>();
             this.OriginTables = new HashSet<OriginTable>();
         }
     
@@ -30,8 +31,11 @@ namespace Cyber20ShadowServer
         public Nullable<int> LastApplicationsTableID { get; set; }
         public Nullable<System.DateTime> NextRetentionTime { get; set; }
         public Nullable<System.DateTime> CreateDate { get; set; }
+        public Nullable<System.DateTime> UpdateDate { get; set; }
         public Nullable<bool> IsActive { get; set; }
     
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<Group> Groups { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<OriginTable> OriginTables { get; set; }
     }

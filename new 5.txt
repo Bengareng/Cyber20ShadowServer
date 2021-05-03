@@ -1,0 +1,41 @@
+
+
+--SELECT		
+--	   [ID]
+--      ,[ServerID]
+--      ,[ApplicationName]
+--      ,[ApplicationVersion]
+--      ,[Status]
+--      ,[DisplayName]
+--      ,[InWhitelist]
+--      ,[NumOfEnginesDetected]
+--      ,[ComputerName]
+--      ,[ClientGroup]
+--      ,[RequestTime]
+--      ,[ApplicationMD5]
+--      ,[ScanLinks]
+--      ,[CreateDate]
+--      ,[IsActive] 
+--FROM #tempTable
+
+
+
+--SELECT 
+--		*
+--FROM	
+--		OriginTable OT
+--WHERE  
+--		(@ServerID IS NULL OR ServerID = @ServerID) AND
+--		(@ApplicationName IS NULL OR ApplicationName = @ApplicationName) AND
+--		(@ApplicationVersion IS NULL OR ApplicationVersion = @ApplicationVersion) AND
+--		(@Status IS NULL OR [Status] = @Status) AND
+--		(@NumOfEnginesDetected IS NULL OR NumOfEnginesDetected = @NumOfEnginesDetected) AND
+--		(@ComputerName IS NULL OR ComputerName = @ComputerName) AND
+--		(@ClientGroup IS NULL OR ClientGroup = @ClientGroup) AND
+--		(@RequestTime IS NULL OR RequestTime = @RequestTime) AND
+--		(@ApplicationMD5 IS NULL OR ApplicationMD5 = @ApplicationMD5) AND
+--		(@ScanLinks IS NULL OR ScanLinks = @ScanLinks) 
+
+--ORDER BY CAST(@OrederByOption AS INT)
+--OFFSET @PageNumber ROWS 
+--FETCH NEXT @RowsOfPage ROWS ONLY

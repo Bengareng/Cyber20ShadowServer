@@ -5,9 +5,15 @@
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
       <Diagram DiagramId="5beb1229bd644e8ba625fb41ceedcbd6" Name="Diagram1">
-        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTable" Width="1.5" PointX="3" PointY="1" IsExpanded="true" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.Server" Width="1.5" PointX="0.75" PointY="1.25" IsExpanded="true" />
-        <AssociationConnector Association="Cyber20ShadowModel.FK_OriginTable_Servers" ManuallyRouted="false" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.Group" Width="1.5" PointX="3" PointY="6" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTable" Width="1.5" PointX="3" PointY="1.125" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.Server" Width="1.5" PointX="0.75" PointY="2.875" />
+        <AssociationConnector Association="Cyber20ShadowModel.FK_Group_Servers" />
+        <AssociationConnector Association="Cyber20ShadowModel.FK_OriginTable_Servers" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTableCategory" Width="1.5" PointX="5.25" PointY="2.375" />
+        <AssociationConnector Association="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.Category" Width="1.5" PointX="5.375" PointY="6" />
+        <AssociationConnector Association="Cyber20ShadowModel.FK_OriginTableCategories_Categories" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>
