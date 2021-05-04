@@ -65,7 +65,9 @@ namespace Cyber20ShadowServer
                                             CommitBatchSize = 1000,
                                             ConnectionString = $"Data Source=localhost; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
                                         };
+
                                         bool flag = false;
+                                        UpdateUnSceneOriginTable(InternalStore.Where(x => x.Status != "Not Scanned Yet").ToList());
                                         if (objBulk.Commit())
                                         {
                                             //cyber20ShadowEntities.BulkSaveChanges();
@@ -145,7 +147,6 @@ namespace Cyber20ShadowServer
             }
             return Server;
         }
-
         private static List<OriginTable> STR_Connection(string connectionString, Server server)
         {
             List<OriginTable> InternalStore = new List<OriginTable>();
@@ -209,7 +210,6 @@ namespace Cyber20ShadowServer
             }
             return InternalStore;
         }
-
         private static string SqlQuery(int lastID)
         {
             string query = "SELECT DISTINCT" +
@@ -252,7 +252,6 @@ namespace Cyber20ShadowServer
             //    " INNER JOIN [Cyber20DB].[dbo].[ClientsMonitor] CM ON CT.ComputerMAC = CM.ClientMAC" +
             //    $" WHERE AT.ID > {lastID} ORDER BY AT.RequestTime ";
         }
-
         private static void WriteToFile(string Message)
         {
             string path = AppDomain.CurrentDomain.BaseDirectory + "\\Logs";
@@ -282,7 +281,6 @@ namespace Cyber20ShadowServer
                 }
             }
         }
-
         private static void MatchCatgeoryAndOriginTable()
         {
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
@@ -309,7 +307,6 @@ namespace Cyber20ShadowServer
                 }
             }
         }
-
         private static List<ClientsMonitor> Cyber20DB_Connection(string connectionString, int serverID)
         {
             List<ClientsMonitor> InternalStore = new List<ClientsMonitor>();
@@ -373,6 +370,39 @@ namespace Cyber20ShadowServer
                 throw;
             }
             return InternalStore;
+        }
+        private static bool UpdateUnSceneOriginTable(IEnumerable<OriginTable> InternalStore)
+        {
+            Cyber20ShadowEntities db = new Cyber20ShadowEntities();
+
+            if (InternalStore.Any())
+            { 
+
+                foreach (var originTable in InternalStore)
+                {
+                    var list = db.OriginTables.Where(x => x.ApplicationMD5 == originTable.ApplicationMD5).ToList();
+
+                    if (list.Count() > 1)
+                    {
+                        foreach (var table in list)
+                        {
+                            if (originTable.RequestTime >= table.RequestTime)
+                            {
+                                table.Status = originTable.Status;
+                                table.ScanLinks = originTable.ScanLinks;
+                                table.NumOfEnginesDetected = originTable.NumOfEnginesDetected;
+                                table.InWhitelist = originTable.InWhitelist;
+                                db.OriginTables.Attach(table);
+                                db.Entry(table).State = EntityState.Modified;
+                                db.SaveChanges();
+                            }
+                        }
+                    }
+                }
+                return true;
+            }
+
+            return false;
         }
     }
 }
