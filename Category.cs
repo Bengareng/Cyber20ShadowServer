@@ -24,9 +24,11 @@ namespace Cyber20ShadowServer
         public string Name { get; set; }
         public string Action { get; set; }
         public string Color { get; set; }
-        public Nullable<int> ParentID { get; set; }
+        public int ParentID { get; set; }
         public Nullable<bool> IsActive { get; set; }
         public Nullable<System.DateTime> CreateDate { get; set; }
+        public string Description { get; set; }
+        public Nullable<int> Position { get; set; }
     
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<OriginTableCategory> OriginTableCategories { get; set; }

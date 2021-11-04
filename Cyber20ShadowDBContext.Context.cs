@@ -12,21 +12,19 @@ namespace Cyber20ShadowServer
     using System;
     using System.Data.Entity;
     using System.Data.Entity.Infrastructure;
-
+    
     public partial class Cyber20ShadowEntities : DbContext
     {
         public Cyber20ShadowEntities()
             : base("name=Cyber20ShadowEntities")
         {
-            Configuration.LazyLoadingEnabled = false;
-            Configuration.ProxyCreationEnabled = false;
         }
-
+    
         protected override void OnModelCreating(DbModelBuilder modelBuilder)
         {
             throw new UnintentionalCodeFirstException();
         }
-
+    
         public virtual DbSet<Group> Groups { get; set; }
         public virtual DbSet<OriginTable> OriginTables { get; set; }
         public virtual DbSet<Server> Servers { get; set; }

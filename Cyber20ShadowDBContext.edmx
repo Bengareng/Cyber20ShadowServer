@@ -13,9 +13,11 @@
           <Property Name="Name" Type="nvarchar" MaxLength="250" />
           <Property Name="Action" Type="nvarchar" MaxLength="200" />
           <Property Name="Color" Type="nvarchar" MaxLength="50" />
-          <Property Name="ParentID" Type="int" />
+          <Property Name="Description" Type="nvarchar" MaxLength="250" />
+          <Property Name="ParentID" Type="int" Nullable="false" />
           <Property Name="IsActive" Type="bit" />
           <Property Name="CreateDate" Type="datetime" />
+          <Property Name="Position" Type="int" />
         </EntityType>
         <EntityType Name="Group">
           <Key>
@@ -24,6 +26,8 @@
           <Property Name="ID" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="ServerID" Type="int" />
           <Property Name="Name" Type="nvarchar" MaxLength="250" />
+          <Property Name="Description" Type="nvarchar" MaxLength="250" />
+          <Property Name="License" Type="int" />
           <Property Name="IsActive" Type="bit" />
           <Property Name="CreateDate" Type="datetime" />
         </EntityType>
@@ -47,6 +51,7 @@
           <Property Name="CreateDate" Type="datetime" />
           <Property Name="IsActive" Type="bit" />
           <Property Name="Remark" Type="nvarchar" MaxLength="500" />
+          <Property Name="ProcessPath" Type="nvarchar" MaxLength="1000" />
         </EntityType>
         <EntityType Name="OriginTableCategories">
           <Key>
@@ -182,6 +187,8 @@
           <Property Name="IsActive" Type="Boolean" />
           <Property Name="CreateDate" Type="DateTime" Precision="3" />
           <NavigationProperty Name="Server" Relationship="Cyber20ShadowModel.FK_Group_Servers" FromRole="Group" ToRole="Server" />
+          <Property Name="License" Type="Int32" />
+          <Property Name="Description" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityType Name="OriginTable">
           <Key>
@@ -205,6 +212,7 @@
           <NavigationProperty Name="Server" Relationship="Cyber20ShadowModel.FK_OriginTable_Servers" FromRole="OriginTable" ToRole="Server" />
           <Property Name="Remark" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
           <NavigationProperty Name="OriginTableCategories" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable" FromRole="OriginTable" ToRole="OriginTableCategory" />
+          <Property Name="ProcessPath" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
         </EntityType>
         <EntityType Name="Server">
           <Key>
@@ -280,10 +288,12 @@
           <Property Name="Name" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
           <Property Name="Action" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
           <Property Name="Color" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="ParentID" Type="Int32" />
+          <Property Name="ParentID" Type="Int32" Nullable="false" />
           <Property Name="IsActive" Type="Boolean" />
           <Property Name="CreateDate" Type="DateTime" Precision="3" />
           <NavigationProperty Name="OriginTableCategories" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_Categories" FromRole="Category" ToRole="OriginTableCategory" />
+          <Property Name="Description" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Position" Type="Int32" />
         </EntityType>
         <Association Name="FK_OriginTableCategories_Categories">
           <End Type="Cyber20ShadowModel.Category" Role="Category" Multiplicity="1" />
@@ -306,6 +316,8 @@
           <EntitySetMapping Name="Groups">
             <EntityTypeMapping TypeName="Cyber20ShadowModel.Group">
               <MappingFragment StoreEntitySet="Group">
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="License" ColumnName="License" />
                 <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
                 <ScalarProperty Name="IsActive" ColumnName="IsActive" />
                 <ScalarProperty Name="Name" ColumnName="Name" />
@@ -317,6 +329,7 @@
           <EntitySetMapping Name="OriginTables">
             <EntityTypeMapping TypeName="Cyber20ShadowModel.OriginTable">
               <MappingFragment StoreEntitySet="OriginTable">
+                <ScalarProperty Name="ProcessPath" ColumnName="ProcessPath" />
                 <ScalarProperty Name="Remark" ColumnName="Remark" />
                 <ScalarProperty Name="IsActive" ColumnName="IsActive" />
                 <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
@@ -367,6 +380,8 @@
           <EntitySetMapping Name="Categories">
             <EntityTypeMapping TypeName="Cyber20ShadowModel.Category">
               <MappingFragment StoreEntitySet="Categories">
+                <ScalarProperty Name="Position" ColumnName="Position" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
                 <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
                 <ScalarProperty Name="IsActive" ColumnName="IsActive" />
                 <ScalarProperty Name="ParentID" ColumnName="ParentID" />

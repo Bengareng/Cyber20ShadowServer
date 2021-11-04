@@ -36,6 +36,7 @@ namespace Cyber20ShadowServer
         public Nullable<System.DateTime> CreateDate { get; set; }
         public Nullable<bool> IsActive { get; set; }
         public string Remark { get; set; }
+        public string ProcessPath { get; set; }
     
         public virtual Server Server { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]

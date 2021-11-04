@@ -17,6 +17,8 @@ namespace Cyber20ShadowServer
             try
             {
                 OriginShadowConnection();
+
+                MatchCatgeoryAndOriginTable();
             }
             catch (Exception ex)
             {
@@ -55,7 +57,9 @@ namespace Cyber20ShadowServer
                                     //var sdf = InternalStore.Where(x => x.ServerID == null).ToList();
                                     if (InternalStore.Any())
                                     {
+
                                         server.LastApplicationsTableID = InternalStore.OrderByDescending(x => x.ID).FirstOrDefault().ID;
+                                        Console.WriteLine(server.LastApplicationsTableID);
                                         //cyber20ShadowEntities.BulkInsert(InternalStore);
 
                                         BulkUploadToSql<OriginTable> objBulk = new BulkUploadToSql<OriginTable>()
@@ -89,7 +93,7 @@ namespace Cyber20ShadowServer
                                             }
                                         }
 
-                                        MatchCatgeoryAndOriginTable();
+
                                         if (flag)
                                         {
                                             WriteToFile("Groups.cyber20ShadowEntities.SaveChanges()");
@@ -145,6 +149,8 @@ namespace Cyber20ShadowServer
                     }
                 }
             }
+
+
             return Server;
         }
         private static List<OriginTable> STR_Connection(string connectionString, Server server)
@@ -254,12 +260,12 @@ namespace Cyber20ShadowServer
         }
         private static void WriteToFile(string Message)
         {
-            string path = AppDomain.CurrentDomain.BaseDirectory + "\\Logs";
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-            }
-            string filepath = AppDomain.CurrentDomain.BaseDirectory + "\\Logs\\ServiceLog_" + DateTime.Now.Date.ToShortDateString().Replace('/', '_') + ".txt";
+            //string path = AppDomain.CurrentDomain.BaseDirectory + "\\Logs";
+            //if (!Directory.Exists(path))
+            //{
+            //    Directory.CreateDirectory(path);
+            //}
+            string filepath = AppDomain.CurrentDomain.BaseDirectory + "\\ServiceLog_" + DateTime.Now.Date.ToShortDateString().Replace('/', '_') + ".txt";
             if (!System.IO.File.Exists(filepath))
             {
                 FileInfo fi = new FileInfo(filepath);
@@ -285,25 +291,30 @@ namespace Cyber20ShadowServer
         {
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
-            var lastItem = db.OriginTableCategories.OrderByDescending(x => x.OriginTableID).Select(x => x).FirstOrDefault();
-            int lastId = 0;
-            foreach (Category c in db.Categories.Where(x => x.IsActive == true && x.ParentID > 0).ToList())
+            //var lastItem = db.OriginTableCategories.OrderByDescending(x => x.OriginTableID).FirstOrDefault();
+            //int lastId = 0;
+            foreach (Category c in db.Categories.Where(x => x.ParentID > 0).ToList())
             {
-                if (lastItem != null) lastId = lastItem.OriginTableID;
-                string query = $"SELECT * FROM [Cyber20Shadow].[dbo].[OriginTable] WHERE ApplicationName LIKE '{c.Name.Replace("*", "%").Replace("_", "[_]")}' AND ID > {lastId}";
-                var originTableCategories = db.Database.SqlQuery<OriginTable>(query).ToList();
-                if (originTableCategories.Any())
+                //if (lastItem != null) lastId = lastItem.OriginTableID;
+                string query = $"SELECT * FROM [Cyber20Shadow].[dbo].[OriginTable]  OT " +
+                    $"Left  JOIN [Cyber20Shadow].[dbo].[OriginTableCategories] OTC ON OTC.OriginTableID = OT.ID " +
+                    $"WHERE ApplicationName LIKE '{c.Name.Replace("*", "%").Replace("_", "[_]").Replace("'", "''")}' AND OTC.OriginTableID IS NULL ";
+
+                try
                 {
-                    foreach (var item in originTableCategories)
+                    var originTableCategories = db.Database.SqlQuery<OriginTable>(query).Select(x => new OriginTableCategory { OriginTableID = x.ID, CategoryID = c.ID, CreateDate = DateTime.Now }).ToList();
+                    if (originTableCategories.Any())
                     {
-                        db.OriginTableCategories.Add(new OriginTableCategory
-                        {
-                            CategoryID = c.ID,
-                            OriginTableID = item.ID,
-                            CreateDate = DateTime.Now
-                        });
+                        db.OriginTableCategories.AddRange(originTableCategories);
+                        db.SaveChanges();
                     }
-                    db.SaveChanges();
+                }
+                catch (Exception)
+                {
+
+                    WriteToFile(query);
+
+                    throw;
                 }
             }
         }
@@ -376,27 +387,28 @@ namespace Cyber20ShadowServer
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
             if (InternalStore.Any())
-            { 
+            {
 
                 foreach (var originTable in InternalStore)
                 {
-                    var list = db.OriginTables.Where(x => x.ApplicationMD5 == originTable.ApplicationMD5).ToList();
+                    var list = db.OriginTables.Where(x => x.ApplicationMD5 == originTable.ApplicationMD5 && originTable.RequestTime >= x.RequestTime && (x.Status != originTable.Status || x.ScanLinks != originTable.ScanLinks)).ToList();
 
                     if (list.Count() > 1)
                     {
-                        foreach (var table in list)
+                        list.ForEach(x =>
                         {
-                            if (originTable.RequestTime >= table.RequestTime)
-                            {
-                                table.Status = originTable.Status;
-                                table.ScanLinks = originTable.ScanLinks;
-                                table.NumOfEnginesDetected = originTable.NumOfEnginesDetected;
-                                table.InWhitelist = originTable.InWhitelist;
-                                db.OriginTables.Attach(table);
-                                db.Entry(table).State = EntityState.Modified;
-                                db.SaveChanges();
-                            }
-                        }
+                            x.Status = originTable.Status;
+                            x.ScanLinks = originTable.ScanLinks;
+                            x.NumOfEnginesDetected = originTable.NumOfEnginesDetected;
+                            x.InWhitelist = originTable.InWhitelist;
+                        });
+                        //table.Status = originTable.Status;
+                        //table.ScanLinks = originTable.ScanLinks;
+                        //table.NumOfEnginesDetected = originTable.NumOfEnginesDetected;
+                        //table.InWhitelist = originTable.InWhitelist;
+                        //db.OriginTables.Attach(table);
+                        //db.Entry(table).State = EntityState.Modified;
+                        db.SaveChanges();
                     }
                 }
                 return true;
