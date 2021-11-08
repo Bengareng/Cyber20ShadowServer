@@ -106,6 +106,12 @@
     <Compile Include="Category.cs">
       <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
     </Compile>
+    <Compile Include="ClientsMonitor.cs">
+      <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="ClientsMonitorOriginTable.cs">
+      <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
+    </Compile>
     <Compile Include="Cyber20ShadowDBContext.Context.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -127,6 +133,7 @@
     </Compile>
     <Compile Include="Model\BulkUploadToSql.cs" />
     <Compile Include="Model\BulkUploadToSqlHelper.cs" />
+    <Compile Include="Model\Extension\ExtensionMethods.cs" />
     <Compile Include="OriginTable.cs">
       <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
     </Compile>

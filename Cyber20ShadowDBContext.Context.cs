@@ -30,5 +30,7 @@ namespace Cyber20ShadowServer
         public virtual DbSet<Server> Servers { get; set; }
         public virtual DbSet<OriginTableCategory> OriginTableCategories { get; set; }
         public virtual DbSet<Category> Categories { get; set; }
+        public virtual DbSet<ClientsMonitor> ClientsMonitors { get; set; }
+        public virtual DbSet<ClientsMonitorOriginTable> ClientsMonitorOriginTables { get; set; }
     }
 }

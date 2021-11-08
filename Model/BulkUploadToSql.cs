@@ -33,6 +33,7 @@ namespace Cyber20ShadowServer.Model
         {
             try
             {
+                string[] tables = { "Server", "OriginTableCategories", "ClientsMonitorOriginTables", "OriginTable", "ClientsMonitor", "Category" };
                 using (SqlConnection connection = new SqlConnection(ConnectionString))
                 {
                     SqlBulkCopy bulkCopy =
@@ -47,8 +48,8 @@ namespace Cyber20ShadowServer.Model
 
                     foreach (DataColumn col in dt.Columns)
                     {
-                        
-                        if ("Server" != col.ColumnName  && "OriginTableCategories" != col.ColumnName)
+
+                        if (!tables.Contains(col.ColumnName))
                         {
                             bulkCopy.ColumnMappings.Add(col.ColumnName, col.ColumnName);
                         }

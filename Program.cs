@@ -54,14 +54,19 @@ namespace Cyber20ShadowServer
                                     IEnumerable<OriginTable> InternalStore = STR_Connection(connectionString, server).ToList();
                                     Console.WriteLine(InternalStore.Any());
                                     List<OriginTable> NeedToRemoved = new List<OriginTable>();
-                                    //var sdf = InternalStore.Where(x => x.ServerID == null).ToList();
+                                 
                                     if (InternalStore.Any())
                                     {
-
+                                        IEnumerable<OriginTable> sevingTable = InternalStore;
                                         server.LastApplicationsTableID = InternalStore.OrderByDescending(x => x.ID).FirstOrDefault().ID;
                                         Console.WriteLine(server.LastApplicationsTableID);
                                         //cyber20ShadowEntities.BulkInsert(InternalStore);
 
+
+                                        InternalStore = InternalStore.Where(x => !cyber20ShadowEntities.OriginTables.Select(s => s.ApplicationMD5).Contains(x.ApplicationMD5)).ToList();
+
+
+                                        //InternalStore = InternalStore.Except(exceptOriginTables).ToList();
                                         BulkUploadToSql<OriginTable> objBulk = new BulkUploadToSql<OriginTable>()
                                         {
                                             InternalStore = InternalStore,
@@ -70,12 +75,34 @@ namespace Cyber20ShadowServer
                                             ConnectionString = $"Data Source=localhost; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
                                         };
 
+
                                         bool flag = false;
                                         UpdateUnSceneOriginTable(InternalStore.Where(x => x.Status != "Not Scanned Yet").ToList());
+
                                         if (objBulk.Commit())
                                         {
                                             //cyber20ShadowEntities.BulkSaveChanges();
                                             WriteToFile("objBulk.Commit()");
+
+                                            List<ClientsMonitorOriginTable> originTables = new List<ClientsMonitorOriginTable>();
+                                            foreach (var item in cyber20ShadowEntities.ClientsMonitors.Where(x => x.ServerID == server.ID))
+                                            {
+                                                var sdf = sevingTable.Where(x => x.ClientGroup == item.ClientGroup && x.ComputerName == item.ClientName).Select(x => new ClientsMonitorOriginTable { OriginTableID = x.ID, ClientsMonitorID = x.ID, CreateDate = DateTime.Now }).ToList();
+                                                originTables.AddRange(sdf);
+                                            }
+
+                                            if (originTables.Any())
+                                            {
+                                                BulkUploadToSql<ClientsMonitorOriginTable> objBulkcmot = new BulkUploadToSql<ClientsMonitorOriginTable>()
+                                                {
+                                                    InternalStore = originTables,
+                                                    TableName = "ClientsMonitorOriginTable",
+                                                    CommitBatchSize = 1000,
+                                                    ConnectionString = $"Data Source=localhost; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
+                                                };
+                                                objBulkcmot.Commit();
+                                            }
+
                                             string[] groups = InternalStore.OrderBy(x => x.ID).GroupBy(x => x.ClientGroup).Select(x => x.Key).ToArray();
                                             foreach (string g in groups)
                                             {
@@ -93,7 +120,6 @@ namespace Cyber20ShadowServer
                                             }
                                         }
 
-
                                         if (flag)
                                         {
                                             WriteToFile("Groups.cyber20ShadowEntities.SaveChanges()");
@@ -101,7 +127,7 @@ namespace Cyber20ShadowServer
                                         }
                                         Server.Add(server);
 
-                                        //}
+                                       
                                     }
                                 }
                                 catch (Exception ex)
@@ -260,11 +286,6 @@ namespace Cyber20ShadowServer
         }
         private static void WriteToFile(string Message)
         {
-            //string path = AppDomain.CurrentDomain.BaseDirectory + "\\Logs";
-            //if (!Directory.Exists(path))
-            //{
-            //    Directory.CreateDirectory(path);
-            //}
             string filepath = AppDomain.CurrentDomain.BaseDirectory + "\\ServiceLog_" + DateTime.Now.Date.ToShortDateString().Replace('/', '_') + ".txt";
             if (!System.IO.File.Exists(filepath))
             {
@@ -291,23 +312,29 @@ namespace Cyber20ShadowServer
         {
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
-            //var lastItem = db.OriginTableCategories.OrderByDescending(x => x.OriginTableID).FirstOrDefault();
+            var lastItem = db.OriginTableCategories.OrderByDescending(x => x.OriginTableID).FirstOrDefault();
             //int lastId = 0;
             foreach (Category c in db.Categories.Where(x => x.ParentID > 0).ToList())
             {
                 //if (lastItem != null) lastId = lastItem.OriginTableID;
                 string query = $"SELECT * FROM [Cyber20Shadow].[dbo].[OriginTable]  OT " +
                     $"Left  JOIN [Cyber20Shadow].[dbo].[OriginTableCategories] OTC ON OTC.OriginTableID = OT.ID " +
-                    $"WHERE ApplicationName LIKE '{c.Name.Replace("*", "%").Replace("_", "[_]").Replace("'", "''")}' AND OTC.OriginTableID IS NULL ";
+                    $"WHERE ApplicationName LIKE '{c.Name.Replace("*", "%").Replace("_", "[_]").Replace("'", "''")}' AND OTC.OriginTableID IS NULL AND OT.ID > {lastItem.ID}";
 
                 try
                 {
                     var originTableCategories = db.Database.SqlQuery<OriginTable>(query).Select(x => new OriginTableCategory { OriginTableID = x.ID, CategoryID = c.ID, CreateDate = DateTime.Now }).ToList();
                     if (originTableCategories.Any())
                     {
-                        db.OriginTableCategories.AddRange(originTableCategories);
-                        db.SaveChanges();
+                        _ = new BulkUploadToSql<OriginTableCategory>()
+                        {
+                            InternalStore = originTableCategories,
+                            TableName = "OriginTableCategories",
+                            CommitBatchSize = 1000,
+                            ConnectionString = $"Data Source=localhost; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
+                        }.Commit();
                     }
+
                 }
                 catch (Exception)
                 {

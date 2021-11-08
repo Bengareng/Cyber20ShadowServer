@@ -18,6 +18,7 @@ namespace Cyber20ShadowServer
         public OriginTable()
         {
             this.OriginTableCategories = new HashSet<OriginTableCategory>();
+            this.ClientsMonitorOriginTables = new HashSet<ClientsMonitorOriginTable>();
         }
     
         public int ID { get; set; }
@@ -41,5 +42,7 @@ namespace Cyber20ShadowServer
         public virtual Server Server { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<OriginTableCategory> OriginTableCategories { get; set; }
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<ClientsMonitorOriginTable> ClientsMonitorOriginTables { get; set; }
     }
 }
