@@ -19,6 +19,10 @@
         <AssociationConnector Association="Cyber20ShadowModel.FK_ClientsMonitor_Servers" />
         <AssociationConnector Association="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_ClientsMonitor" />
         <AssociationConnector Association="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_OriginTable" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTableUser" Width="1.5" PointX="8.25" PointY="2.625" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.User" Width="1.5" PointX="6" PointY="14.125" />
+        <AssociationConnector Association="Cyber20ShadowModel.FK_OriginTableUser_OriginTable" />
+        <AssociationConnector Association="Cyber20ShadowModel.FK_OriginTableUser_User" />
       </Diagram>
     </edmx:Diagrams>
   </edmx:Designer>

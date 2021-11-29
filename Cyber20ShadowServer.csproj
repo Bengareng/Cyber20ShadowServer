@@ -57,6 +57,12 @@
     <Reference Include="EntityFramework.SqlServer, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>packages\EntityFramework.6.4.4\lib\net45\EntityFramework.SqlServer.dll</HintPath>
     </Reference>
+    <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.12.0.2\lib\net45\Newtonsoft.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="RestSharp, Version=106.13.0.0, Culture=neutral, PublicKeyToken=598062e77f915f75, processorArchitecture=MSIL">
+      <HintPath>packages\RestSharp.106.13.0\lib\net452\RestSharp.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
@@ -91,6 +97,10 @@
     </Reference>
     <Reference Include="System.ServiceProcess" />
     <Reference Include="System.Transactions" />
+    <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Web" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -128,6 +138,12 @@
       <DependentUpon>Cyber20ShadowDBContext.edmx</DependentUpon>
     </Compile>
     <Compile Include="Entities\ClientsMonitor.cs" />
+    <Compile Include="Entities\VirusTotal\Data.cs" />
+    <Compile Include="Entities\VirusTotal\FileResult.cs" />
+    <Compile Include="Entities\VirusTotal\LastAnalysisStatus.cs" />
+    <Compile Include="Entities\VirusTotal\Link.cs" />
+    <Compile Include="Entities\VirusTotal\SignaAnalysisStatus.cs" />
+    <Compile Include="Entities\VirusTotal\VirusTotal.cs" />
     <Compile Include="Group.cs">
       <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
     </Compile>
@@ -140,11 +156,23 @@
     <Compile Include="OriginTableCategory.cs">
       <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
     </Compile>
+    <Compile Include="OriginTableUser.cs">
+      <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
+    </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="QueryListWiteOutDuplicatedRowsTest_Result.cs">
+      <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="QueryListWiteOutDuplicatedRows_Result.cs">
+      <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
+    </Compile>
     <Compile Include="Repository\GenericRepository.cs" />
     <Compile Include="Repository\IGenericRepository.cs" />
     <Compile Include="Server.cs">
+      <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
+    </Compile>
+    <Compile Include="User.cs">
       <DependentUpon>Cyber20ShadowDBContext.tt</DependentUpon>
     </Compile>
   </ItemGroup>

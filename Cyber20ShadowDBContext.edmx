@@ -104,6 +104,15 @@
           <Property Name="OriginTableID" Type="int" Nullable="false" />
           <Property Name="CreateDate" Type="datetime" Nullable="false" />
         </EntityType>
+        <EntityType Name="OriginTableUser">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="OriginTableID" Type="int" />
+          <Property Name="UserID" Type="int" />
+          <Property Name="CreateDate" Type="datetime" />
+        </EntityType>
         <EntityType Name="Servers">
           <Key>
             <PropertyRef Name="ID" />
@@ -120,6 +129,21 @@
           <Property Name="CreateDate" Type="datetime" />
           <Property Name="UpdateDate" Type="datetime" />
           <Property Name="IsActive" Type="bit" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="UserName" Type="nvarchar" MaxLength="250" />
+          <Property Name="Email" Type="nvarchar" MaxLength="250" />
+          <Property Name="HashedPassword" Type="nvarchar" MaxLength="500" />
+          <Property Name="Salt" Type="nvarchar" MaxLength="500" />
+          <Property Name="IsActive" Type="bit" />
+          <Property Name="CreateDate" Type="datetime" />
+          <Property Name="UpdateDate" Type="datetime" />
+          <Property Name="ShowStatus" Type="bit" />
+          <Property Name="LastPasswordChangedDate" Type="datetime" />
         </EntityType>
         <Association Name="FK_ClientsMonitor_Servers">
           <End Role="Servers" Type="Self.Servers" Multiplicity="0..1" />
@@ -205,6 +229,32 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <Association Name="FK_OriginTableUser_OriginTable">
+          <End Role="OriginTable" Type="Self.OriginTable" Multiplicity="0..1" />
+          <End Role="OriginTableUser" Type="Self.OriginTableUser" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="OriginTable">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="OriginTableUser">
+              <PropertyRef Name="OriginTableID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_OriginTableUser_User">
+          <End Role="User" Type="Self.User" Multiplicity="0..1" />
+          <End Role="OriginTableUser" Type="Self.OriginTableUser" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="OriginTableUser">
+              <PropertyRef Name="UserID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Function Name="QueryListWiteOutDuplicatedRows" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo" />
+        <Function Name="QueryListWiteOutDuplicatedRowsTest" Aggregate="false" BuiltIn="false" NiladicFunction="false" IsComposable="false" ParameterTypeSemantics="AllowImplicitConversion" Schema="dbo" />
         <EntityContainer Name="Cyber20ShadowModelStoreContainer">
           <EntitySet Name="Categories" EntityType="Self.Categories" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="ClientsMonitor" EntityType="Self.ClientsMonitor" Schema="dbo" store:Type="Tables" />
@@ -212,7 +262,9 @@
           <EntitySet Name="Group" EntityType="Self.Group" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="OriginTable" EntityType="Self.OriginTable" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="OriginTableCategories" EntityType="Self.OriginTableCategories" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="OriginTableUser" EntityType="Self.OriginTableUser" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Servers" EntityType="Self.Servers" Schema="dbo" store:Type="Tables" />
+          <EntitySet Name="User" EntityType="Self.User" Schema="dbo" store:Type="Tables" />
           <AssociationSet Name="FK_ClientsMonitor_Servers" Association="Self.FK_ClientsMonitor_Servers">
             <End Role="Servers" EntitySet="Servers" />
             <End Role="ClientsMonitor" EntitySet="ClientsMonitor" />
@@ -240,6 +292,14 @@
           <AssociationSet Name="FK_OriginTableCategories_OriginTable" Association="Self.FK_OriginTableCategories_OriginTable">
             <End Role="OriginTable" EntitySet="OriginTable" />
             <End Role="OriginTableCategories" EntitySet="OriginTableCategories" />
+          </AssociationSet>
+          <AssociationSet Name="FK_OriginTableUser_OriginTable" Association="Self.FK_OriginTableUser_OriginTable">
+            <End Role="OriginTable" EntitySet="OriginTable" />
+            <End Role="OriginTableUser" EntitySet="OriginTableUser" />
+          </AssociationSet>
+          <AssociationSet Name="FK_OriginTableUser_User" Association="Self.FK_OriginTableUser_User">
+            <End Role="User" EntitySet="User" />
+            <End Role="OriginTableUser" EntitySet="OriginTableUser" />
           </AssociationSet>
         </EntityContainer>
       </Schema></edmx:StorageModels>
@@ -282,6 +342,18 @@
             <End Role="OriginTable" EntitySet="OriginTables" />
             <End Role="ClientsMonitorOriginTable" EntitySet="ClientsMonitorOriginTables" />
           </AssociationSet>
+          <FunctionImport Name="QueryListWiteOutDuplicatedRows" ReturnType="Collection(Cyber20ShadowModel.QueryListWiteOutDuplicatedRows_Result)" />
+          <FunctionImport Name="QueryListWiteOutDuplicatedRowsTest" ReturnType="Collection(Cyber20ShadowModel.QueryListWiteOutDuplicatedRowsTest_Result)" />
+          <EntitySet Name="OriginTableUsers" EntityType="Cyber20ShadowModel.OriginTableUser" />
+          <EntitySet Name="Users" EntityType="Cyber20ShadowModel.User" />
+          <AssociationSet Name="FK_OriginTableUser_OriginTable" Association="Cyber20ShadowModel.FK_OriginTableUser_OriginTable">
+            <End Role="OriginTable" EntitySet="OriginTables" />
+            <End Role="OriginTableUser" EntitySet="OriginTableUsers" />
+          </AssociationSet>
+          <AssociationSet Name="FK_OriginTableUser_User" Association="Cyber20ShadowModel.FK_OriginTableUser_User">
+            <End Role="User" EntitySet="Users" />
+            <End Role="OriginTableUser" EntitySet="OriginTableUsers" />
+          </AssociationSet>
         </EntityContainer>
         <EntityType Name="Group">
           <Key>
@@ -320,6 +392,7 @@
           <NavigationProperty Name="OriginTableCategories" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable" FromRole="OriginTable" ToRole="OriginTableCategory" />
           <Property Name="ProcessPath" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
           <NavigationProperty Name="ClientsMonitorOriginTables" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_OriginTable" FromRole="OriginTable" ToRole="ClientsMonitorOriginTable" />
+          <NavigationProperty Name="OriginTableUsers" Relationship="Cyber20ShadowModel.FK_OriginTableUser_OriginTable" FromRole="OriginTable" ToRole="OriginTableUser" />
         </EntityType>
         <EntityType Name="Server">
           <Key>
@@ -497,6 +570,94 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
+        <ComplexType Name="QueryListWiteOutDuplicatedRows_Result">
+          <Property Type="Int32" Name="ServerID" Nullable="true" />
+          <Property Type="String" Name="ApplicationName" Nullable="true" MaxLength="100" />
+          <Property Type="String" Name="ApplicationVersion" Nullable="true" MaxLength="80" />
+          <Property Type="String" Name="Status" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="DisplayName" Nullable="true" MaxLength="150" />
+          <Property Type="String" Name="InWhitelist" Nullable="true" MaxLength="1" />
+          <Property Type="Byte" Name="NumOfEnginesDetected" Nullable="true" />
+          <Property Type="String" Name="ComputerName" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="ClientGroup" Nullable="true" MaxLength="50" />
+          <Property Type="DateTime" Name="RequestTime" Nullable="true" Precision="23" />
+          <Property Type="String" Name="ApplicationMD5" Nullable="true" MaxLength="40" />
+          <Property Type="String" Name="ScanLinks" Nullable="true" MaxLength="1000" />
+          <Property Type="Boolean" Name="IsActive" Nullable="true" />
+          <Property Type="String" Name="Remark" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="ProcessPath" Nullable="true" MaxLength="1000" />
+          <Property Type="Int64" Name="row_num" Nullable="true" />
+        </ComplexType>
+        <ComplexType Name="QueryListWiteOutDuplicatedRowsTest_Result">
+          <Property Type="Int32" Name="ID" Nullable="false" />
+          <Property Type="Int32" Name="ServerID" Nullable="true" />
+          <Property Type="String" Name="ApplicationName" Nullable="true" MaxLength="100" />
+          <Property Type="String" Name="ApplicationVersion" Nullable="true" MaxLength="80" />
+          <Property Type="String" Name="Status" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="DisplayName" Nullable="true" MaxLength="150" />
+          <Property Type="String" Name="InWhitelist" Nullable="true" MaxLength="1" />
+          <Property Type="Byte" Name="NumOfEnginesDetected" Nullable="true" />
+          <Property Type="String" Name="ComputerName" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="ClientGroup" Nullable="true" MaxLength="50" />
+          <Property Type="DateTime" Name="RequestTime" Nullable="true" Precision="23" />
+          <Property Type="String" Name="ApplicationMD5" Nullable="true" MaxLength="40" />
+          <Property Type="String" Name="ScanLinks" Nullable="true" MaxLength="1000" />
+          <Property Type="Boolean" Name="IsActive" Nullable="true" />
+          <Property Type="String" Name="Remark" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="ProcessPath" Nullable="true" MaxLength="1000" />
+          <Property Type="Int64" Name="row_num" Nullable="true" />
+        </ComplexType>
+        <EntityType Name="OriginTableUser">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="OriginTableID" Type="Int32" />
+          <Property Name="UserID" Type="Int32" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="OriginTable" Relationship="Cyber20ShadowModel.FK_OriginTableUser_OriginTable" FromRole="OriginTableUser" ToRole="OriginTable" />
+          <NavigationProperty Name="User" Relationship="Cyber20ShadowModel.FK_OriginTableUser_User" FromRole="OriginTableUser" ToRole="User" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserName" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="HashedPassword" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="Salt" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
+          <Property Name="UpdateDate" Type="DateTime" Precision="3" />
+          <Property Name="ShowStatus" Type="Boolean" />
+          <Property Name="LastPasswordChangedDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="OriginTableUsers" Relationship="Cyber20ShadowModel.FK_OriginTableUser_User" FromRole="User" ToRole="OriginTableUser" />
+        </EntityType>
+        <Association Name="FK_OriginTableUser_OriginTable">
+          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="0..1" />
+          <End Type="Cyber20ShadowModel.OriginTableUser" Role="OriginTableUser" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="OriginTable">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="OriginTableUser">
+              <PropertyRef Name="OriginTableID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_OriginTableUser_User">
+          <End Type="Cyber20ShadowModel.User" Role="User" Multiplicity="0..1" />
+          <End Type="Cyber20ShadowModel.OriginTableUser" Role="OriginTableUser" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="User">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="OriginTableUser">
+              <PropertyRef Name="UserID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         </Schema>
     </edmx:ConceptualModels>
     <!-- C-S mapping content -->
@@ -622,6 +783,77 @@
                 <ScalarProperty Name="ClientsMonitorID" ColumnName="ClientsMonitorID" />
                 <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
                 <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <FunctionImportMapping FunctionImportName="QueryListWiteOutDuplicatedRows" FunctionName="Cyber20ShadowModel.Store.QueryListWiteOutDuplicatedRows">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="Cyber20ShadowModel.QueryListWiteOutDuplicatedRows_Result">
+                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
+                <ScalarProperty Name="ApplicationName" ColumnName="ApplicationName" />
+                <ScalarProperty Name="ApplicationVersion" ColumnName="ApplicationVersion" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="DisplayName" ColumnName="DisplayName" />
+                <ScalarProperty Name="InWhitelist" ColumnName="InWhitelist" />
+                <ScalarProperty Name="NumOfEnginesDetected" ColumnName="NumOfEnginesDetected" />
+                <ScalarProperty Name="ComputerName" ColumnName="ComputerName" />
+                <ScalarProperty Name="ClientGroup" ColumnName="ClientGroup" />
+                <ScalarProperty Name="RequestTime" ColumnName="RequestTime" />
+                <ScalarProperty Name="ApplicationMD5" ColumnName="ApplicationMD5" />
+                <ScalarProperty Name="ScanLinks" ColumnName="ScanLinks" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Remark" ColumnName="Remark" />
+                <ScalarProperty Name="ProcessPath" ColumnName="ProcessPath" />
+                <ScalarProperty Name="row_num" ColumnName="row_num" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <FunctionImportMapping FunctionImportName="QueryListWiteOutDuplicatedRowsTest" FunctionName="Cyber20ShadowModel.Store.QueryListWiteOutDuplicatedRowsTest">
+            <ResultMapping>
+              <ComplexTypeMapping TypeName="Cyber20ShadowModel.QueryListWiteOutDuplicatedRowsTest_Result">
+                <ScalarProperty Name="ID" ColumnName="ID" />
+                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
+                <ScalarProperty Name="ApplicationName" ColumnName="ApplicationName" />
+                <ScalarProperty Name="ApplicationVersion" ColumnName="ApplicationVersion" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="DisplayName" ColumnName="DisplayName" />
+                <ScalarProperty Name="InWhitelist" ColumnName="InWhitelist" />
+                <ScalarProperty Name="NumOfEnginesDetected" ColumnName="NumOfEnginesDetected" />
+                <ScalarProperty Name="ComputerName" ColumnName="ComputerName" />
+                <ScalarProperty Name="ClientGroup" ColumnName="ClientGroup" />
+                <ScalarProperty Name="RequestTime" ColumnName="RequestTime" />
+                <ScalarProperty Name="ApplicationMD5" ColumnName="ApplicationMD5" />
+                <ScalarProperty Name="ScanLinks" ColumnName="ScanLinks" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Remark" ColumnName="Remark" />
+                <ScalarProperty Name="ProcessPath" ColumnName="ProcessPath" />
+                <ScalarProperty Name="row_num" ColumnName="row_num" />
+              </ComplexTypeMapping>
+            </ResultMapping>
+          </FunctionImportMapping>
+          <EntitySetMapping Name="OriginTableUsers">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.OriginTableUser">
+              <MappingFragment StoreEntitySet="OriginTableUser">
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="UserID" ColumnName="UserID" />
+                <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Users">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.User">
+              <MappingFragment StoreEntitySet="User">
+                <ScalarProperty Name="LastPasswordChangedDate" ColumnName="LastPasswordChangedDate" />
+                <ScalarProperty Name="ShowStatus" ColumnName="ShowStatus" />
+                <ScalarProperty Name="UpdateDate" ColumnName="UpdateDate" />
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="Salt" ColumnName="Salt" />
+                <ScalarProperty Name="HashedPassword" ColumnName="HashedPassword" />
+                <ScalarProperty Name="Email" ColumnName="Email" />
+                <ScalarProperty Name="UserName" ColumnName="UserName" />
                 <ScalarProperty Name="ID" ColumnName="ID" />
               </MappingFragment>
             </EntityTypeMapping>
