@@ -16,19 +16,26 @@ namespace Cyber20ShadowServer
 {
     internal class Program
     {
-
+        private const int VirusTotalRequestRate = 1000;
         private static void Main(string[] args)
         {
+            Cyber20ShadowEntities db = new Cyber20ShadowEntities();
             try
             {
-                OriginShadowConnection();
+                var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
+                OriginShadowConnection(user);
 
                 MatchCatgeoryAndOriginTable();
 
                 if (DateTime.Now.Hour == 11)
-                    ScannAllUnScannedApplicaition();
-
-
+                {
+                    if (user != null)
+                    {
+                        var date = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Day == DateTime.Now.Day);
+                        if (date < VirusTotalRequestRate)
+                            ScannAllUnScannedApplicaition(VirusTotalRequestRate - date);
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -37,7 +44,7 @@ namespace Cyber20ShadowServer
             }
         }
 
-        private static IEnumerable<Server> OriginShadowConnection()
+        private static IEnumerable<Server> OriginShadowConnection(User user)
         {
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
@@ -73,24 +80,27 @@ namespace Cyber20ShadowServer
 
                                         InternalStore = InternalStore.GroupBy(x => x.ApplicationMD5, (key, x) => x.FirstOrDefault()).Where(x => !db.OriginTables.Select(s => s.ApplicationMD5).Contains(x.ApplicationMD5)).ToList();
 
-                                        InternalStore.ToList().ForEach(x =>
+                                        if (user != null)
                                         {
-                                            x.ID = 0;
-                                            Data virusTotal = VirusTotalFileReport(x.ApplicationMD5).Data;
-                                            if (virusTotal != null)
-                                            {
-                                                if (virusTotal.Attributes.LastAnalysisStatus.Malicious > 0)
-                                                    x.Status = "Suspicious";
-                                                else
-                                                    x.Status = "OK";
+                                            var scannerByAdministrator = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Day == DateTime.Now.Day);
+                                            if (scannerByAdministrator < VirusTotalRequestRate)
+                                                InternalStore.ToList().ForEach(x =>
+                                                {
+                                                    x.ID = 0;
+                                                    Data virusTotal = VirusTotalFileReport(x.ApplicationMD5).Data;
+                                                    if (virusTotal != null)
+                                                    {
+                                                        if (virusTotal.Attributes.LastAnalysisStatus.Malicious > 0)
+                                                            x.Status = "Suspicious";
+                                                        else
+                                                            x.Status = "OK";
 
-                                                x.NumOfEnginesDetected = (byte)virusTotal.Attributes.LastAnalysisStatus.Malicious;
-                                                x.ScanLinks = virusTotal.Links.Self;
-                                            }
-                                            else x.Status = "Unknown";
-                                        });
-
-
+                                                        x.NumOfEnginesDetected = (byte)virusTotal.Attributes.LastAnalysisStatus.Malicious;
+                                                        x.ScanLinks = virusTotal.Links.Self;
+                                                    }
+                                                    else x.Status = "Unknown";
+                                                });
+                                        }
 
                                         BulkUploadToSql<OriginTable> objBulk = new BulkUploadToSql<OriginTable>()
                                         {
@@ -112,19 +122,31 @@ namespace Cyber20ShadowServer
                                             WriteToFile("objBulk.Commit()");
 
 
-                                            var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
                                             if (user != null)
                                             {
                                                 var otu = db.OriginTables.OrderByDescending(x => x.ID).Take(InternalStore.Count()).ToList();
-                                                var sdfsd = otu.Select(x => new OriginTableUser
+
+
+
+                                                var originTableUsers = otu.Select(x => new OriginTableUser
                                                 {
                                                     CreateDate = DateTime.Now,
                                                     OriginTableID = x.ID,
                                                     UserID = user.ID
                                                 }).ToList();
-                                                db.OriginTableUsers.AddRange(sdfsd);
-                                                db.SaveChanges();
+
+                                                var otuBulk = new BulkUploadToSql<OriginTableUser>()
+                                                {
+                                                    InternalStore = originTableUsers,
+                                                    TableName = "OriginTableUser",
+                                                    CommitBatchSize = 1000,
+                                                    ConnectionString = $"Data Source=localhost; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
+                                                }.Commit();
+
+                                                //db.OriginTableUsers.AddRange(sdfsd);
+                                                //db.SaveChanges();
                                             }
+
                                             string[] groups = InternalStore.OrderBy(x => x.ID).GroupBy(x => x.ClientGroup).Select(x => x.Key).ToArray();
                                             foreach (string g in groups)
                                             {
@@ -521,28 +543,33 @@ namespace Cyber20ShadowServer
         }
 
 
-        static void ScannAllUnScannedApplicaition()
+        static void ScannAllUnScannedApplicaition(int size)
         {
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
-            var ot = db.OriginTables.Where(x => x.Status == "Not Scanned Yet").ToList();
-            ot.ForEach(x =>
+            var ot = db.OriginTables.OrderByDescending(x => x.ID).Take(size).Where(x => x.Status == "Not Scanned Yet").ToList();
+            if (ot.Any())
             {
-                Data virusTotal = VirusTotalFileReport(x.ApplicationMD5).Data;
-                if (virusTotal != null)
+                ot.ForEach(x =>
                 {
-                    if (virusTotal.Attributes.LastAnalysisStatus.Malicious > 0)
-                        x.Status = "Suspicious";
-                    else
-                        x.Status = "OK";
+                    Data virusTotal = VirusTotalFileReport(x.ApplicationMD5).Data;
+                    if (virusTotal != null)
+                    {
+                        if (virusTotal.Attributes.LastAnalysisStatus.Malicious > 0)
+                            x.Status = "Suspicious";
+                        else
+                            x.Status = "OK";
 
-                    x.NumOfEnginesDetected = (byte)virusTotal.Attributes.LastAnalysisStatus.Malicious;
-                    x.ScanLinks = virusTotal.Links.Self;
-                }
-                else x.Status = "Unknown";
-            });
+                        x.NumOfEnginesDetected = (byte)virusTotal.Attributes.LastAnalysisStatus.Malicious;
+                        x.ScanLinks = virusTotal.Links.Self;
+                    }
+                    else x.Status = "Unknown";
+                });
 
-            db.BulkUpdate(ot);
+                db.OriginTables.AttachRange(ot);
+                db.Entry(ot).State = EntityState.Modified;
+                db.SaveChanges();
+            }
         }
     }
 }
