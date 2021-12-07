@@ -33,7 +33,7 @@ namespace Cyber20ShadowServer.Model
         {
             try
             {
-                string[] tables = { "Server", "OriginTableCategories", "ClientsMonitorOriginTables", "OriginTable", "ClientsMonitor", "Category", "OriginTableUsers" };
+                string[] tables = { "Server", "OriginTableCategories", "ClientsMonitorOriginTables", "OriginTable", "ClientsMonitor", "Category", "OriginTableUsers", "User" };
                 using (SqlConnection connection = new SqlConnection(ConnectionString))
                 {
                     SqlBulkCopy bulkCopy =

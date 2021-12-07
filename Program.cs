@@ -12,6 +12,7 @@ using System.Linq;
 using System.Threading.Tasks;
 
 
+
 namespace Cyber20ShadowServer
 {
     internal class Program
@@ -22,20 +23,23 @@ namespace Cyber20ShadowServer
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
             try
             {
+
+
                 var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
                 OriginShadowConnection(user);
 
                 MatchCatgeoryAndOriginTable();
 
-                if (DateTime.Now.Hour == 11)
+                if (DateTime.Now.Hour == 23 && user != null)
                 {
-                    if (user != null)
-                    {
-                        var date = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Day == DateTime.Now.Day);
-                        if (date < VirusTotalRequestRate)
-                            ScannAllUnScannedApplicaition(VirusTotalRequestRate - date);
-                    }
+                    string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
+                    string q = $"SELECT * FROM OriginTableUser WHERE CreateDate >= '{curentTime}' AND UserID = {user.ID} ";
+                    //string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}'";
+                    var data = db.Database.SqlQuery<OriginTable>(q).ToList();
+                    if (data.Count() < VirusTotalRequestRate)
+                        ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
                 }
+
             }
             catch (Exception ex)
             {
@@ -82,7 +86,11 @@ namespace Cyber20ShadowServer
 
                                         if (user != null)
                                         {
-                                            var scannerByAdministrator = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Day == DateTime.Now.Day);
+                                            string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
+                                            string q = $"SELECT * FROM OriginTableUser WHERE CreateDate >= '{curentTime}' AND UserID = {user.ID} ";
+                                            var scannerByAdministrator = db.Database.SqlQuery<OriginTableUser>(q).ToList().Count();
+
+                                            //var scannerByAdministrator = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Date == DateTime.Now.Date);
                                             if (scannerByAdministrator < VirusTotalRequestRate)
                                                 InternalStore.ToList().ForEach(x =>
                                                 {
@@ -96,7 +104,7 @@ namespace Cyber20ShadowServer
                                                             x.Status = "OK";
 
                                                         x.NumOfEnginesDetected = (byte)virusTotal.Attributes.LastAnalysisStatus.Malicious;
-                                                        x.ScanLinks = virusTotal.Links.Self;
+                                                        x.ScanLinks = $"https://www.virustotal.com/gui/file/{virusTotal.ID}";
                                                     }
                                                     else x.Status = "Unknown";
                                                 });
@@ -142,9 +150,6 @@ namespace Cyber20ShadowServer
                                                     CommitBatchSize = 1000,
                                                     ConnectionString = $"Data Source=localhost; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
                                                 }.Commit();
-
-                                                //db.OriginTableUsers.AddRange(sdfsd);
-                                                //db.SaveChanges();
                                             }
 
                                             string[] groups = InternalStore.OrderBy(x => x.ID).GroupBy(x => x.ClientGroup).Select(x => x.Key).ToArray();
@@ -234,7 +239,7 @@ namespace Cyber20ShadowServer
 
                     // 1.  create a command object identifying the stored procedure
                     SqlCommand cmd = new SqlCommand(SqlQuery((int)server.LastApplicationsTableID), conn);
-
+                    cmd.CommandTimeout = 180;
                     //// 2. set the command object so it knows to execute a stored procedure
                     //cmd.CommandType = CommandType.StoredProcedure;
 
@@ -548,6 +553,7 @@ namespace Cyber20ShadowServer
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
             var ot = db.OriginTables.OrderByDescending(x => x.ID).Take(size).Where(x => x.Status == "Not Scanned Yet").ToList();
+            WriteToFile($"{ot.Count()}");
             if (ot.Any())
             {
                 ot.ForEach(x =>
@@ -561,13 +567,12 @@ namespace Cyber20ShadowServer
                             x.Status = "OK";
 
                         x.NumOfEnginesDetected = (byte)virusTotal.Attributes.LastAnalysisStatus.Malicious;
-                        x.ScanLinks = virusTotal.Links.Self;
+                        x.ScanLinks = $"https://www.virustotal.com/gui/file/{virusTotal.ID}";
                     }
                     else x.Status = "Unknown";
                 });
+                WriteToFile($"SaveChanges - < ScannAllUnScannedApplicaition");
 
-                db.OriginTables.AttachRange(ot);
-                db.Entry(ot).State = EntityState.Modified;
                 db.SaveChanges();
             }
         }
