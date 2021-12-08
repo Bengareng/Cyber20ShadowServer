@@ -35,7 +35,7 @@ namespace Cyber20ShadowServer
                     string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
                     string q = $"SELECT * FROM OriginTableUser WHERE CreateDate >= '{curentTime}' AND UserID = {user.ID} ";
                     //string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}'";
-                    var data = db.Database.SqlQuery<OriginTable>(q).ToList();
+                    var data = db.Database.SqlQuery<OriginTableUser>(q).ToList();
                     if (data.Count() < VirusTotalRequestRate)
                         ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
                 }
@@ -82,7 +82,8 @@ namespace Cyber20ShadowServer
                                         server.LastApplicationsTableID = InternalStore.OrderByDescending(x => x.ID).FirstOrDefault().ID;
                                         Console.WriteLine(server.LastApplicationsTableID);
 
-                                        InternalStore = InternalStore.GroupBy(x => x.ApplicationMD5, (key, x) => x.FirstOrDefault()).Where(x => !db.OriginTables.Select(s => s.ApplicationMD5).Contains(x.ApplicationMD5)).ToList();
+                                        InternalStore = InternalStore.GroupBy(x => x.ApplicationMD5, (key, x) => x.FirstOrDefault())
+                                            .Where(x => !db.OriginTables.Select(s => s.ApplicationMD5).Contains(x.ApplicationMD5)).ToList();
 
                                         if (user != null)
                                         {
@@ -200,27 +201,7 @@ namespace Cyber20ShadowServer
                             {
                                 WriteToFile(ex.Message + " - " + ex.StackTrace + " - " + ex.Source + " - " + ex.GetType());
                             }
-                        }
-
-                        //connectionString = $"Data Source={server.IPAddress}; Initial Catalog=Cyber20DB; User ID={server.UserName}; Password={server.Password};";
-
-                        //int lastInsert = cyber20ShadowEntities.Database.SqlQuery<int>($"SELECT COUNT(*) FROM ClientsMonitor WHERE ServerID = {server.ID}").Count();
-                        //var ClientsMonitor = Cyber20DB_Connection(connectionString, server.ID).Skip(lastInsert).ToList();
-
-                        //if (ClientsMonitor.Any())
-                        //{
-                        //    BulkUploadToSql<ClientsMonitor> objBulk = new BulkUploadToSql<ClientsMonitor>()
-                        //    {
-                        //        InternalStore = ClientsMonitor,
-                        //        TableName = "ClientsMonitor",
-                        //        CommitBatchSize = 1000,
-                        //        ConnectionString = $"Data Source=localhost; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
-                        //    };
-                        //    if (objBulk.Commit())
-                        //    {
-                        //        WriteToFile("ClientsMonitor is inserted");
-                        //    }
-                        //}
+                        }              
                     }
                 }
             }
@@ -314,24 +295,7 @@ namespace Cyber20ShadowServer
             query += $" WHERE AT.ID > {lastID} ORDER BY AT.RequestTime ";
 
             return query;
-            //return "SELECT DISTINCT" +
-            //    " AT.ID ," +
-            //    " AT.ApplicationName," +
-            //    " AT.DisplayName," +
-            //    " AT.ApplicationVersion," +
-            //    " AT.Status," +
-            //    " AT.NumOfEnginesDetected," +
-            //    " CM.ClientName 'ComputerName'," +
-            //    " CM.ClientGroup," +
-            //    " AT.RequestTime," +
-            //    " AT.InWhitelist," +
-            //    " AT.ApplicationMD5," +
-            //    " AT.ScanLinks" +
-            //    " FROM ApplicationsComputersTable ACT " +
-            //    " INNER JOIN ComputersTable CT ON   ACT.Computer = CT.UID" +
-            //    " INNER JOIN ApplicationsTable AT ON AT.ID = ACT.Application" +
-            //    " INNER JOIN [Cyber20DB].[dbo].[ClientsMonitor] CM ON CT.ComputerMAC = CM.ClientMAC" +
-            //    $" WHERE AT.ID > {lastID} ORDER BY AT.RequestTime ";
+   
         }
         private static void WriteToFile(string Message)
         {
@@ -517,7 +481,7 @@ namespace Cyber20ShadowServer
             //var lastInsert = db.OriginTables.OrderByDescending(s => new { s.CreateDate }).Take(InternalStore.Count()).ToList();
             foreach (var item in db.ClientsMonitors.Where(x => x.ServerID == serverID && x.ConnectionStatus == "Online"))
             {
-                var sdf = tables.Where(x => x.ClientGroup == item.ClientGroup && x.ComputerName == item.ClientName).Select(x => new ClientsMonitorOriginTable { OriginTableID = tables.FirstOrDefault(d => d.ApplicationMD5 == x.ApplicationMD5).ID, ClientsMonitorID = item.ID, CreateDate = DateTime.Now }).ToList();
+                var sdf = sevingTable.Where(x => x.ClientGroup == item.ClientGroup && x.ComputerName == item.ClientName).Select(x => new ClientsMonitorOriginTable { OriginTableID = tables.FirstOrDefault(d => d.ApplicationMD5 == x.ApplicationMD5).ID, ClientsMonitorID = item.ID, CreateDate = DateTime.Now }).ToList();
 
 
                 if (sdf.Any()) clientsMonitorOriginTables.AddRange(sdf);
@@ -552,7 +516,7 @@ namespace Cyber20ShadowServer
         {
             Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
-            var ot = db.OriginTables.OrderByDescending(x => x.ID).Take(size).Where(x => x.Status == "Not Scanned Yet").ToList();
+            var ot = db.OriginTables.Where(x => x.Status == "Not Scanned Yet").OrderByDescending(x => x.ID).Take(size).ToList();
             WriteToFile($"{ot.Count()}");
             if (ot.Any())
             {
