@@ -145,18 +145,6 @@
           <Property Name="ShowStatus" Type="bit" />
           <Property Name="LastPasswordChangedDate" Type="datetime" />
         </EntityType>
-        <Association Name="FK_ClientsMonitor_Servers">
-          <End Role="Servers" Type="Self.Servers" Multiplicity="0..1" />
-          <End Role="ClientsMonitor" Type="Self.ClientsMonitor" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Servers">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="ClientsMonitor">
-              <PropertyRef Name="ServerID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         <Association Name="FK_ClientsMonitorOriginTable_ClientsMonitor">
           <End Role="ClientsMonitor" Type="Self.ClientsMonitor" Multiplicity="0..1" />
           <End Role="ClientsMonitorOriginTable" Type="Self.ClientsMonitorOriginTable" Multiplicity="*" />
@@ -265,10 +253,6 @@
           <EntitySet Name="OriginTableUser" EntityType="Self.OriginTableUser" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Servers" EntityType="Self.Servers" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="User" EntityType="Self.User" Schema="dbo" store:Type="Tables" />
-          <AssociationSet Name="FK_ClientsMonitor_Servers" Association="Self.FK_ClientsMonitor_Servers">
-            <End Role="Servers" EntitySet="Servers" />
-            <End Role="ClientsMonitor" EntitySet="ClientsMonitor" />
-          </AssociationSet>
           <AssociationSet Name="FK_ClientsMonitorOriginTable_ClientsMonitor" Association="Self.FK_ClientsMonitorOriginTable_ClientsMonitor">
             <End Role="ClientsMonitor" EntitySet="ClientsMonitor" />
             <End Role="ClientsMonitorOriginTable" EntitySet="ClientsMonitorOriginTable" />
