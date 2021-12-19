@@ -30,9 +30,9 @@ namespace Cyber20ShadowServer
                 var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
                 OriginShadowConnection(user);
 
-                MatchCatgeoryAndOriginTable();
+                Task.Run(() => MatchCatgeoryAndOriginTable());
 
-                if (DateTime.Now.Hour == 23 && user != null)
+                if (DateTime.Now.ToString("HH") == "23" && user != null)
                 {
                     string curentTime = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
                     string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}' AND Status != 'Not Scanned Yet' ORDER BY ID DESC";
@@ -540,16 +540,15 @@ namespace Cyber20ShadowServer
                     Data virusTotal = VirusTotalFileReport(x.ApplicationMD5).Data;
                     if (virusTotal != null)
                     {
-                        if (virusTotal.Attributes.LastAnalysisStatus.Malicious > 0)
-                            x.Status = "Suspicious";
-                        else
-                            x.Status = "OK";
+                        if (virusTotal.Attributes.LastAnalysisStatus.Malicious > 0) x.Status = "Suspicious";
+                        else x.Status = "OK";
 
                         x.NumOfEnginesDetected = (byte)virusTotal.Attributes.LastAnalysisStatus.Malicious;
                         x.ScanLinks = $"https://www.virustotal.com/gui/file/{virusTotal.ID}";
                     }
                     else x.Status = "Unknown";
                 });
+
                 WriteToFile($"SaveChanges - < ScannAllUnScannedApplicaition");
 
                 db.SaveChanges();
