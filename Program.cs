@@ -21,7 +21,7 @@ namespace Cyber20ShadowServer
         static readonly Cyber20ShadowEntities db = new Cyber20ShadowEntities();
         static readonly SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(db.Database.Connection.ConnectionString);
 
-
+        static bool flag = true;
         private const int VirusTotalRequestRate = 1000;
         private static void Main(string[] args)
         {
@@ -30,17 +30,9 @@ namespace Cyber20ShadowServer
                 var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
                 OriginShadowConnection(user);
 
-                Task.Run(() => MatchCatgeoryAndOriginTable());
+                //Task.Run( () =>  MatchCatgeoryAndOriginTable());
 
-                if (DateTime.Now.ToString("HH") == "23" && user != null)
-                {
-                    string curentTime = DateTime.Now.AddDays(-1).ToString("yyyy-MM-dd");
-                    string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}' AND Status != 'Not Scanned Yet' ORDER BY ID DESC";
-                    //string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}'";
-                    var data = db.Database.SqlQuery<OriginTable>(q).ToList();
-                    if (data.Count() < VirusTotalRequestRate)
-                        ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
-                }
+                //Task.Run(() => RunScannerUnScannerdApplicaiton(user));
 
             }
             catch (Exception ex)
@@ -48,6 +40,17 @@ namespace Cyber20ShadowServer
                 WriteToFile(ex.Message + " - " + ex.StackTrace);
                 Console.Write(ex.Message);
             }
+        }
+
+        private static async Task RunScannerUnScannerdApplicaiton(User user)
+        {
+            string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
+            string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}' AND Status != 'Not Scanned Yet' ORDER BY ID DESC";
+            //string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}'";
+            var data = db.Database.SqlQuery<OriginTable>(q).ToList();
+            if (data.Count() < VirusTotalRequestRate)
+                ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
+
         }
         private static IEnumerable<Server> OriginShadowConnection(User user)
         {
@@ -333,7 +336,7 @@ namespace Cyber20ShadowServer
                 }
             }
         }
-        private static void MatchCatgeoryAndOriginTable()
+        private static async Task MatchCatgeoryAndOriginTable()
         {
             //Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
@@ -531,7 +534,7 @@ namespace Cyber20ShadowServer
             //var ot = db.OriginTables.OrderByDescending(x => x.RequestTime).Where(x => x.Status == "Not Scanned Yet").Take(size).ToList();
 
             string q = $"SELECT  TOP({size}) * FROM OriginTable WHERE Status != 'Not Scanned Yet' ORDER BY ID DESC";
-            var ot = db.Database.SqlQuery<OriginTable>(q).ToList(); ;
+            var ot = db.Database.SqlQuery<OriginTable>(q).ToList();
             WriteToFile($"{ot.Count()}");
             if (ot.Any())
             {
