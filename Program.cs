@@ -37,11 +37,11 @@ namespace Cyber20ShadowServer
 
                 var SuspiciousAppNeedToReport = OriginShadowConnection(user);
 
-                //var SuspiciousAppNeedToReport = db.OriginTables.OrderByDescending(x => x.NumOfEnginesDetected).Where(x => x.NumOfEnginesDetected > 2).ToList();
 
                 if (SuspiciousAppNeedToReport.Any())
                 {
                     var appsByGroups = SuspiciousAppNeedToReport.GroupBy(x => new { x.Server, x.ClientGroup }, (key, x) => x.FirstOrDefault()).ToList();
+
                     foreach (var item in appsByGroups)
                     {
                         string _getUser = "select U.Email from [User] U " +
@@ -53,8 +53,9 @@ namespace Cyber20ShadowServer
                         if (emails.Any())
                         {
                             string ss = CreateFolderFileForExcel("Report", "EmailAlert") + $"\\Cyber 2.0-{item.ClientGroup}.csv";
-                            SuspiciousAppNeedToReport.Where(x => x.ServerID == item.ServerID && x.ClientGroup == item.ClientGroup).WriteToCSV(ss);
-                            if (SendMail(ss, emails))
+                            var userSuspiciousApp = SuspiciousAppNeedToReport.Where(x => x.ServerID == item.ServerID && x.ClientGroup == item.ClientGroup);
+                            userSuspiciousApp.WriteToCSV(ss);
+                            if (SendMail(ss, emails, userSuspiciousApp))
                                 File.Delete(ss);
                         }
                     }
@@ -69,7 +70,7 @@ namespace Cyber20ShadowServer
 
                     SuspiciousAppNeedToReport.WriteToCSV(adminPath);
 
-                    if (SendMail(adminPath, db.Database.SqlQuery<string>(q).ToArray()))
+                    if (SendMail(adminPath, db.Database.SqlQuery<string>(q).ToArray(), SuspiciousAppNeedToReport))
                         File.Delete(adminPath);
                 }
 
@@ -135,7 +136,7 @@ namespace Cyber20ShadowServer
                                         //List<OriginTable> nelistOld = new List<OriginTable>();
                                         foreach (var item in InternalStore.GroupBy(x => x.ApplicationMD5, (key, x) => x.FirstOrDefault()))
                                         {
-                                            var vm = db.OriginTables.FirstOrDefault(x => x.ApplicationMD5 == item.ApplicationMD5);
+                                            var vm = db.OriginTables.FirstOrDefault(x => x.ApplicationMD5 == item.ApplicationMD5 && x.Status != "Not Scanned Yet");
                                             if (vm == null)
                                                 nelistNew.Add(item);
                                         }
@@ -169,7 +170,7 @@ namespace Cyber20ShadowServer
                                                     else x.Status = "Unknown";
                                                 });
 
-                                            SuspiciousAppNeedToReport.AddRange(InternalStore.Where(x => x.NumOfEnginesDetected > 1));
+                                            SuspiciousAppNeedToReport.AddRange(InternalStore.Where(x => x.NumOfEnginesDetected > 2));
                                         }
 
                                         BulkUploadToSql<OriginTable> objBulk = new BulkUploadToSql<OriginTable>()
@@ -596,7 +597,6 @@ namespace Cyber20ShadowServer
                 db.SaveChanges();
             }
         }
-
         private static string CreateFolderFileForExcel(string folderName, string nestedFolder)
         {
             string path = $"C:\\{folderName}";
@@ -612,7 +612,6 @@ namespace Cyber20ShadowServer
             }
             return nestedFolderpath;
         }
-
         static IEnumerable<OriginTable> AddLostApplicationOfGroup(IEnumerable<OriginTable> InternalStore)
         {
             var test = (from ot in db.OriginTables
@@ -667,8 +666,7 @@ namespace Cyber20ShadowServer
 
             return InternalStore.Where(x => !test.Where(s => s.ApplicationMD5 == x.ApplicationMD5 && s.ComputerName == x.ComputerName).Any()).ToList();
         }
-
-        static bool SendMail(string path, string[] emails)
+        static bool SendMail(string path, string[] emails, IEnumerable<OriginTable> InternalStore)
         {
 
             if (path != "")
@@ -685,8 +683,8 @@ namespace Cyber20ShadowServer
                     Msg.Subject = "Cyber 2.0 Alert info - " + DateTime.Now.Date.ToString();
                     Msg.Attachments.Add(new Attachment(path, "application/vnd.ms-excel"));
                     //Msg.From = new MailAddress("cyber@cyber20.com");
-                    //Msg.IsBodyHtml = true;
-
+                    Msg.IsBodyHtml = true;
+                    Msg.Body = TableTemplateHtml(InternalStore);
                     SmtpClient smtp = new SmtpClient
                     {
                         Host = section.Network.Host,
@@ -712,7 +710,6 @@ namespace Cyber20ShadowServer
             }
             return false;
         }
-
         static string ReturnLostApplicationQuery(int lastID, string group)
         {
             string query = "SELECT DISTINCT" +
@@ -740,5 +737,49 @@ namespace Cyber20ShadowServer
 
         }
 
+
+        static string TableTemplateHtml(IEnumerable<OriginTable> originTables)
+        {
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("<!DOCTYPE html>");
+            sb.Append("<html dir='rtl'><body>");
+
+            //sb.Append("Hi " + username + ",<br/><br/> " + "Alignment Details <br/>");
+            sb.Append(@"<table border='1' cellpadding='0' cellspacing='0' height='100%' width='100%' >");
+            sb.Append("<tr>" +
+                "<th>ApplicationName</th>" +
+                "<th>ClientGroup</th>" +
+                "<th>ApplicationMD5</th>" +
+                "<th>ApplicationVersion</th>" +
+                "<th>ComputerName</th>" +
+                "<th>DisplayName</th>" +
+                "<th>NumOfEnginesDetected</th>" +
+                "<th>ScanLinks</th>" +
+                "<th>CreateDate</th>" +
+                "<th>CreateDate</th>" +
+                "</tr>");
+            foreach (var origin in originTables)
+            {
+                string color = origin.NumOfEnginesDetected > 9 ? "red" : "orange";
+                sb.Append("<tr color='red'>");
+                sb.Append($"<td><font color='{color}'>{origin.ApplicationName}</font></td>");
+                sb.Append($"<td><font color='{color}'>{origin.ClientGroup}</font></td>");
+                sb.Append($"<td><font color='{color}'>{origin.ApplicationMD5}</font></td>");
+                sb.Append($"<td><font color='{color}'>{origin.ApplicationVersion  }</font></td>");
+                sb.Append($"<td><font color='{color}'>{origin.ComputerName}</font></td>");
+                sb.Append($"<td><font color='{color}'>{origin.DisplayName}</font></td>");
+                sb.Append($"<td><font color='{color}'>{origin.NumOfEnginesDetected}</font></td>");
+                sb.Append($"<td><a href={origin.ScanLinks} color='{color}'>Link</a></td>");
+                sb.Append($"<td><font color='{color}'>{origin.Status}</font></td>");
+                sb.Append($"<td><font color='{color}'>{origin.CreateDate}</font></td>");
+                sb.Append($"</tr>");
+            }
+            sb.Append("</table><br/> Regards, <br/>Web Master.");
+            sb.Append("</body></html>");
+
+            return sb.ToString();
+        }
     }
 }
