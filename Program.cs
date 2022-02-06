@@ -1,5 +1,6 @@
 ﻿using Cyber20ShadowServer.Entities.VirusTotal;
 using Cyber20ShadowServer.Model;
+using Cyber20ShadowServer.Model.Extension;
 using Newtonsoft.Json;
 using RestSharp;
 using System;
@@ -10,6 +11,10 @@ using System.Data.Entity;
 using System.Data.SqlClient;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Configuration;
+using System.Net.Mail;
+using System.Text;
 using System.Threading.Tasks;
 
 
@@ -21,14 +26,55 @@ namespace Cyber20ShadowServer
         static readonly Cyber20ShadowEntities db = new Cyber20ShadowEntities();
         static readonly SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(db.Database.Connection.ConnectionString);
 
-        static bool flag = true;
+        //static readonly bool flag = true;
         private const int VirusTotalRequestRate = 1000;
         private static void Main(string[] args)
         {
             try
             {
                 var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
-                OriginShadowConnection(user);
+
+
+                var SuspiciousAppNeedToReport = OriginShadowConnection(user);
+
+                //var SuspiciousAppNeedToReport = db.OriginTables.OrderByDescending(x => x.NumOfEnginesDetected).Where(x => x.NumOfEnginesDetected > 2).ToList();
+
+                if (SuspiciousAppNeedToReport.Any())
+                {
+                    var appsByGroups = SuspiciousAppNeedToReport.GroupBy(x => new { x.Server, x.ClientGroup }, (key, x) => x.FirstOrDefault()).ToList();
+                    foreach (var item in appsByGroups)
+                    {
+                        string _getUser = "select U.Email from [User] U " +
+                            "INNER JOIN GroupUser GU ON GU.UserID = U.ID " +
+                            "INNER JOIN  [Group] G ON G.ID = GU.GroupID " +
+                            $"WHERE G.Name = '{item.ClientGroup}' AND G.ServerID = {item.ServerID}";
+                        var emails = db.Database.SqlQuery<string>(_getUser).ToArray();
+
+                        if (emails.Any())
+                        {
+                            string ss = CreateFolderFileForExcel("Report", "EmailAlert") + $"\\Cyber 2.0-{item.ClientGroup}.csv";
+                            SuspiciousAppNeedToReport.Where(x => x.ServerID == item.ServerID && x.ClientGroup == item.ClientGroup).WriteToCSV(ss);
+                            if (SendMail(ss, emails))
+                                File.Delete(ss);
+                        }
+                    }
+
+
+                    string adminPath = CreateFolderFileForExcel("Report", "EmailAlert") + $"\\Cyber 2.0-Administroator.csv";
+
+                    string q = "SELECT Email FROM [User] U " +
+                         "INNER JOIN UserRole UR ON UR.UserID = U.ID " +
+                         "INNER JOIN [Role] R ON R.ID = UR.RoleID " +
+                         "WHERE r.Name = 'Administrator'";
+
+                    SuspiciousAppNeedToReport.WriteToCSV(adminPath);
+
+                    if (SendMail(adminPath, db.Database.SqlQuery<string>(q).ToArray()))
+                        File.Delete(adminPath);
+                }
+
+
+
 
                 //Task.Run( () =>  MatchCatgeoryAndOriginTable());
 
@@ -42,19 +88,20 @@ namespace Cyber20ShadowServer
             }
         }
 
-        private static async Task RunScannerUnScannerdApplicaiton(User user)
-        {
-            string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
-            string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}' AND Status != 'Not Scanned Yet' ORDER BY ID DESC";
-            //string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}'";
-            var data = db.Database.SqlQuery<OriginTable>(q).ToList();
-            if (data.Count() < VirusTotalRequestRate)
-                ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
+        //private static async Task RunScannerUnScannerdApplicaiton(User user)
+        //{
+        //    string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
+        //    string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}' AND Status != 'Not Scanned Yet' ORDER BY ID DESC";
+        //    //string q = $"SELECT * FROM OriginTable WHERE CreateDate >= '{curentTime}'";
+        //    var data = db.Database.SqlQuery<OriginTable>(q).ToList();
+        //    if (data.Count() < VirusTotalRequestRate)
+        //        ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
 
-        }
-        private static IEnumerable<Server> OriginShadowConnection(User user)
+        //}
+        private static IEnumerable<OriginTable> OriginShadowConnection(User user)
         {
             List<Server> Server = new List<Server>();
+            List<OriginTable> SuspiciousAppNeedToReport = new List<OriginTable>();
             IEnumerable<Server> AllServers = db.Servers.Where(x => x.IsActive == true).ToList();
             if (AllServers.Any())
             {
@@ -68,22 +115,20 @@ namespace Cyber20ShadowServer
                         {
                             connectionString = $"Data Source={server.IPAddress}; Initial Catalog=Cyber20CyberAnalyzerDB; User ID={server.UserName}; Password={server.Password};";
                             Console.WriteLine(connectionString);
-
                             try
                             {
                                 try
                                 {
                                     IEnumerable<OriginTable> InternalStore = STR_Connection(connectionString, server).ToList();
                                     Console.WriteLine(InternalStore.Any());
-                                    List<OriginTable> NeedToRemoved = new List<OriginTable>();
+                                    //AddLostApplicationOfGroup(InternalStore);
+                                    //List<OriginTable> NeedToRemoved = new List<OriginTable>();
 
                                     if (InternalStore.Any())
                                     {
                                         IEnumerable<OriginTable> sevingTable = InternalStore;
                                         server.LastApplicationsTableID = InternalStore.OrderByDescending(x => x.ID).FirstOrDefault().ID;
                                         Console.WriteLine(server.LastApplicationsTableID);
-
-                                        //InternalStore = InternalStore.GroupBy(x => x.ApplicationMD5, (key, x) => x.FirstOrDefault());
 
                                         //.Where(x => !db.OriginTables.Select(s => s.ApplicationMD5).Contains(x.ApplicationMD5)).ToList();
                                         List<OriginTable> nelistNew = new List<OriginTable>();
@@ -112,7 +157,9 @@ namespace Cyber20ShadowServer
                                                     if (virusTotal != null)
                                                     {
                                                         if (virusTotal.Attributes.LastAnalysisStatus.Malicious > 0)
+                                                        {
                                                             x.Status = "Suspicious";
+                                                        }
                                                         else
                                                             x.Status = "OK";
 
@@ -121,6 +168,8 @@ namespace Cyber20ShadowServer
                                                     }
                                                     else x.Status = "Unknown";
                                                 });
+
+                                            SuspiciousAppNeedToReport.AddRange(InternalStore.Where(x => x.NumOfEnginesDetected > 1));
                                         }
 
                                         BulkUploadToSql<OriginTable> objBulk = new BulkUploadToSql<OriginTable>()
@@ -131,20 +180,13 @@ namespace Cyber20ShadowServer
                                             ConnectionString = $"Data Source={builder.DataSource}; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
                                         };
 
-
-                                        bool flag = false;
-
                                         UpdateUnSceneOriginTable(InternalStore.Where(x => x.Status != "Not Scanned Yet").ToList());
 
                                         if (objBulk.Commit())
                                         {
                                             WriteToFile("objBulk.Commit()");
 
-                                            //var otu = db.OriginTables.OrderByDescending(x => x.ID).Where(x => InternalStore.Select(s => s.ApplicationMD5).Contains(x.ApplicationMD5)).ToList();
-                                            //var otu = (from ot in db.OriginTables.ToList()
-                                            //           join ns in InternalStore.ToList()
-                                            //           on ot.ApplicationMD5 equals ns.ApplicationMD5
-                                            //           select ot).ToList();
+
                                             string q = $"SELECT  TOP({InternalStore.Count()}) * FROM OriginTable WHERE ApplicationMD5 IN('{string.Join("','", InternalStore.Select(x => x.ApplicationMD5))}')  ORDER BY ID DESC";
                                             var otu = db.Database.SqlQuery<OriginTable>(q).ToList();
                                             if (user != null)
@@ -165,7 +207,7 @@ namespace Cyber20ShadowServer
                                                 }.Commit();
                                             }
 
-                                            string[] groups = InternalStore.OrderBy(x => x.ID).GroupBy(x => x.ClientGroup).Select(x => x.Key).ToArray();
+                                            string[] groups = InternalStore.GroupBy(x => x.ClientGroup).Select(x => x.Key).ToArray();
                                             foreach (string g in groups)
                                             {
                                                 if (!db.Groups.Where(x => x.Name == g).ToList().Any())
@@ -177,21 +219,15 @@ namespace Cyber20ShadowServer
                                                         Name = g.Trim(),
                                                         ServerID = server.ID
                                                     });
-                                                    flag = true;
+                                                    db.SaveChanges();
+
                                                 }
                                             }
-
-
 
                                             InsertClientsMonitorOriginTable(sevingTable, otu, server.ID);
                                         }
 
 
-                                        if (flag)
-                                        {
-                                            WriteToFile("Groups.cyber20ShadowEntities.SaveChanges()");
-                                            db.SaveChanges();
-                                        }
                                         Server.Add(server);
                                     }
                                 }
@@ -216,13 +252,14 @@ namespace Cyber20ShadowServer
                             {
                                 WriteToFile(ex.Message + " - " + ex.StackTrace + " - " + ex.Source + " - " + ex.GetType());
                             }
+
                         }
                     }
                 }
             }
 
 
-            return Server;
+            return SuspiciousAppNeedToReport;
         }
         private static List<OriginTable> STR_Connection(string connectionString, Server server)
         {
@@ -232,9 +269,9 @@ namespace Cyber20ShadowServer
                 using (SqlConnection conn = new SqlConnection(connectionString))
                 {
                     conn.Open();
-
                     // 1.  create a command object identifying the stored procedure
                     SqlCommand cmd = new SqlCommand(SqlQuery((int)server.LastApplicationsTableID), conn);
+                    //SqlCommand cmd = new SqlCommand(ReturnLostApplicationQuery((int)server.LastApplicationsTableID, "marrive"), conn);
                     cmd.CommandTimeout = 180;
                     //// 2. set the command object so it knows to execute a stored procedure
                     //cmd.CommandType = CommandType.StoredProcedure;
@@ -336,7 +373,7 @@ namespace Cyber20ShadowServer
                 }
             }
         }
-        private static async Task MatchCatgeoryAndOriginTable()
+        private static void MatchCatgeoryAndOriginTable()
         {
             //Cyber20ShadowEntities db = new Cyber20ShadowEntities();
 
@@ -499,11 +536,13 @@ namespace Cyber20ShadowServer
 
             List<ClientsMonitorOriginTable> clientsMonitorOriginTables = new List<ClientsMonitorOriginTable>();
             //var lastInsert = db.OriginTables.OrderByDescending(s => new { s.CreateDate }).Take(InternalStore.Count()).ToList();
-            foreach (var item in db.ClientsMonitors.Where(x => x.ServerID == serverID && x.ConnectionStatus == "Online"))
+
+            foreach (var item in sevingTable)
             {
-                var sdf = sevingTable.Where(x => x.ClientGroup == item.ClientGroup && x.ComputerName == item.ClientName && x.ID > 0).Select(x => new ClientsMonitorOriginTable { OriginTableID = x.ID, ClientsMonitorID = item.ID, CreateDate = DateTime.Now }).ToList();
-                if (sdf.Any()) clientsMonitorOriginTables.AddRange(sdf);
+                var sdf = db.ClientsMonitors.FirstOrDefault(x => x.ClientGroup == item.ClientGroup && x.ClientName == item.ComputerName && x.ServerID == serverID && x.ConnectionStatus == "Online");
+                if (sdf != null) clientsMonitorOriginTables.Add(new ClientsMonitorOriginTable { OriginTableID = item.ID, ClientsMonitorID = sdf.ID, CreateDate = DateTime.Now, RequestTime = item.RequestTime });
             }
+
 
             if (clientsMonitorOriginTables.Any())
             {
@@ -557,5 +596,149 @@ namespace Cyber20ShadowServer
                 db.SaveChanges();
             }
         }
+
+        private static string CreateFolderFileForExcel(string folderName, string nestedFolder)
+        {
+            string path = $"C:\\{folderName}";
+            string nestedFolderpath = $"{path}\\{nestedFolder}";
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+            if (!Directory.Exists(nestedFolderpath))
+            {
+                Directory.CreateDirectory(nestedFolderpath);
+            }
+            return nestedFolderpath;
+        }
+
+        static IEnumerable<OriginTable> AddLostApplicationOfGroup(IEnumerable<OriginTable> InternalStore)
+        {
+            var test = (from ot in db.OriginTables
+                        join cmot in db.ClientsMonitorOriginTables
+                        on ot.ID equals cmot.OriginTableID
+                        join cm in db.ClientsMonitors
+                        on cmot.ClientsMonitorID equals cm.ID
+                        where cm.ClientGroup == "marrive"
+                        select new { ot, cm }
+
+                        //new OriginTable
+                        //{
+                        //    ApplicationMD5 = ot.ApplicationName,
+                        //    Status = ot.Status,
+                        //    ServerID = ot.ServerID,
+                        //    ScanLinks = ot.ScanLinks,
+                        //    RequestTime = ot.RequestTime,
+                        //    ProcessPath = ot.ProcessPath,
+                        //    NumOfEnginesDetected = ot.NumOfEnginesDetected,
+                        //    InWhitelist = ot.InWhitelist,
+                        //    ApplicationName = ot.ApplicationName,
+                        //    ApplicationVersion = ot.ApplicationVersion,
+                        //    ClientGroup = cm.ClientGroup,
+                        //    ComputerName = cm.ClientName,
+                        //    CreateDate = DateTime.Now,
+                        //    IsActive = true,
+                        //    DisplayName = ot.DisplayName
+                        //}
+                        ).ToList().Select(x =>
+                            new OriginTable
+                            {
+                                ApplicationMD5 = x.ot.ApplicationMD5,
+                                Status = x.ot.Status,
+                                ServerID = x.ot.ServerID,
+                                ScanLinks = x.ot.ScanLinks,
+                                RequestTime = x.ot.RequestTime,
+                                ProcessPath = x.ot.ProcessPath,
+                                NumOfEnginesDetected = x.ot.NumOfEnginesDetected,
+                                InWhitelist = x.ot.InWhitelist,
+                                ApplicationName = x.ot.ApplicationName,
+                                ApplicationVersion = x.ot.ApplicationVersion,
+                                ClientGroup = x.cm.ClientGroup,
+                                ComputerName = x.cm.ClientName,
+                                //CreateDate = DateTime.Now,
+                                IsActive = true,
+                                DisplayName = x.ot.DisplayName
+                            }
+                        ).ToList();
+
+
+
+
+            return InternalStore.Where(x => !test.Where(s => s.ApplicationMD5 == x.ApplicationMD5 && s.ComputerName == x.ComputerName).Any()).ToList();
+        }
+
+        static bool SendMail(string path, string[] emails)
+        {
+
+            if (path != "")
+            {
+                SmtpSection section = (SmtpSection)ConfigurationManager.GetSection("system.net/mailSettings/smtp");
+
+                using (MailMessage Msg = new MailMessage())
+                {
+                    foreach (var email in emails)
+                    {
+                        Msg.To.Add(new MailAddress(email, "Report", Encoding.UTF8));
+                    }
+
+                    Msg.Subject = "Cyber 2.0 Alert info - " + DateTime.Now.Date.ToString();
+                    Msg.Attachments.Add(new Attachment(path, "application/vnd.ms-excel"));
+                    //Msg.From = new MailAddress("cyber@cyber20.com");
+                    //Msg.IsBodyHtml = true;
+
+                    SmtpClient smtp = new SmtpClient
+                    {
+                        Host = section.Network.Host,
+                        EnableSsl = section.Network.EnableSsl,
+                        DeliveryMethod = SmtpDeliveryMethod.Network,
+                        DeliveryFormat = SmtpDeliveryFormat.International,
+                        UseDefaultCredentials = false,
+                        Port = section.Network.Port,
+                        Timeout = 10000,
+                        Credentials = new NetworkCredential(section.Network.UserName, section.Network.Password)
+                    };
+                    try
+                    {
+                        smtp.Send(Msg);
+                        return true;
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message + " - " + ex.StackTrace + " - " + ex.Source + " - " + ex.GetType());
+                        return false;
+                    }
+                }
+            }
+            return false;
+        }
+
+        static string ReturnLostApplicationQuery(int lastID, string group)
+        {
+            string query = "SELECT DISTINCT" +
+                  " AT.ID ," +
+                  " AT.ApplicationName," +
+                  " AT.DisplayName," +
+                  " AT.ApplicationVersion," +
+                  " AT.Status," +
+                  " AT.NumOfEnginesDetected," +
+                  " CM.ClientName 'ComputerName'," +
+                  " CM.ClientGroup," +
+                  " AT.RequestTime," +
+                  " AT.InWhitelist," +
+                  " AT.ApplicationMD5," +
+                  " AT.ScanLinks ";
+            query += "FROM  [Cyber20CyberAnalyzerDB].[dbo].[ApplicationsTable] AT ";
+            query += "INNER JOIN [Cyber20CyberAnalyzerDB].[dbo].[ApplicationsComputersTable] ACT ON AT.ID = ACT.Application ";
+            query += "INNER JOIN [Cyber20CyberAnalyzerDB].[dbo].[ComputersTable] CT ON ACT.Computer = CT.UID ";
+            query += "INNER JOIN [Cyber20DB].[dbo].[ClientsMonitor] CM on CT.ComputerMAC = CM.ClientMAC AND CM.ClientName = CT.ComputerName";
+            query += $" WHERE AT.ID < {lastID} " +
+                $"AND cm.ClientGroup = '{group}'" +
+                $"ORDER BY AT.RequestTime ";
+
+            return query;
+
+        }
+
     }
 }

@@ -19,7 +19,7 @@ namespace Cyber20ShadowServer
         public int OriginTableID { get; set; }
         public System.DateTime CreateDate { get; set; }
     
-        public virtual OriginTable OriginTable { get; set; }
         public virtual Category Category { get; set; }
+        public virtual OriginTable OriginTable { get; set; }
     }
 }

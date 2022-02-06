@@ -27,14 +27,14 @@ namespace Cyber20ShadowServer
             throw new UnintentionalCodeFirstException();
         }
     
-        public virtual DbSet<Group> Groups { get; set; }
-        public virtual DbSet<OriginTable> OriginTables { get; set; }
-        public virtual DbSet<Server> Servers { get; set; }
-        public virtual DbSet<OriginTableCategory> OriginTableCategories { get; set; }
         public virtual DbSet<Category> Categories { get; set; }
         public virtual DbSet<ClientsMonitor> ClientsMonitors { get; set; }
         public virtual DbSet<ClientsMonitorOriginTable> ClientsMonitorOriginTables { get; set; }
+        public virtual DbSet<Group> Groups { get; set; }
+        public virtual DbSet<OriginTable> OriginTables { get; set; }
+        public virtual DbSet<OriginTableCategory> OriginTableCategories { get; set; }
         public virtual DbSet<OriginTableUser> OriginTableUsers { get; set; }
+        public virtual DbSet<Server> Servers { get; set; }
         public virtual DbSet<User> Users { get; set; }
     
         public virtual ObjectResult<QueryListWiteOutDuplicatedRows_Result> QueryListWiteOutDuplicatedRows()

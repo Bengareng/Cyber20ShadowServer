@@ -58,8 +58,11 @@
           </Key>
           <Property Name="ID" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="CreateDate" Type="datetime" />
-          <Property Name="OriginTableID" Type="int" />
+          <Property Name="OriginTableID" Type="int" Nullable="false" />
           <Property Name="ClientsMonitorID" Type="int" />
+          <Property Name="IsReported" Type="bit" />
+          <Property Name="IsWached" Type="bit" />
+          <Property Name="RequestTime" Type="datetime" />
         </EntityType>
         <EntityType Name="Group">
           <Key>
@@ -145,6 +148,18 @@
           <Property Name="ShowStatus" Type="bit" />
           <Property Name="LastPasswordChangedDate" Type="datetime" />
         </EntityType>
+        <Association Name="FK_ClientsMonitor_Servers">
+          <End Role="Servers" Type="Self.Servers" Multiplicity="0..1" />
+          <End Role="ClientsMonitor" Type="Self.ClientsMonitor" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Servers">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="ClientsMonitor">
+              <PropertyRef Name="ServerID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK_ClientsMonitorOriginTable_ClientsMonitor">
           <End Role="ClientsMonitor" Type="Self.ClientsMonitor" Multiplicity="0..1" />
           <End Role="ClientsMonitorOriginTable" Type="Self.ClientsMonitorOriginTable" Multiplicity="*" />
@@ -158,7 +173,7 @@
           </ReferentialConstraint>
         </Association>
         <Association Name="FK_ClientsMonitorOriginTable_OriginTable">
-          <End Role="OriginTable" Type="Self.OriginTable" Multiplicity="0..1" />
+          <End Role="OriginTable" Type="Self.OriginTable" Multiplicity="1" />
           <End Role="ClientsMonitorOriginTable" Type="Self.ClientsMonitorOriginTable" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="OriginTable">
@@ -253,6 +268,10 @@
           <EntitySet Name="OriginTableUser" EntityType="Self.OriginTableUser" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Servers" EntityType="Self.Servers" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="User" EntityType="Self.User" Schema="dbo" store:Type="Tables" />
+          <AssociationSet Name="FK_ClientsMonitor_Servers" Association="Self.FK_ClientsMonitor_Servers">
+            <End Role="Servers" EntitySet="Servers" />
+            <End Role="ClientsMonitor" EntitySet="ClientsMonitor" />
+          </AssociationSet>
           <AssociationSet Name="FK_ClientsMonitorOriginTable_ClientsMonitor" Association="Self.FK_ClientsMonitorOriginTable_ClientsMonitor">
             <End Role="ClientsMonitor" EntitySet="ClientsMonitor" />
             <End Role="ClientsMonitorOriginTable" EntitySet="ClientsMonitorOriginTable" />
@@ -291,29 +310,21 @@
     <edmx:ConceptualModels>
       <Schema Namespace="Cyber20ShadowModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
         <EntityContainer Name="Cyber20ShadowEntities" annotation:LazyLoadingEnabled="true">
+          <FunctionImport Name="QueryListWiteOutDuplicatedRows" ReturnType="Collection(Cyber20ShadowModel.QueryListWiteOutDuplicatedRows_Result)" />
+          <FunctionImport Name="QueryListWiteOutDuplicatedRowsTest" ReturnType="Collection(Cyber20ShadowModel.QueryListWiteOutDuplicatedRowsTest_Result)" />
+          <EntitySet Name="Categories" EntityType="Cyber20ShadowModel.Category" />
+          <EntitySet Name="ClientsMonitors" EntityType="Cyber20ShadowModel.ClientsMonitor" />
+          <EntitySet Name="ClientsMonitorOriginTables" EntityType="Cyber20ShadowModel.ClientsMonitorOriginTable" />
           <EntitySet Name="Groups" EntityType="Cyber20ShadowModel.Group" />
           <EntitySet Name="OriginTables" EntityType="Cyber20ShadowModel.OriginTable" />
-          <EntitySet Name="Servers" EntityType="Cyber20ShadowModel.Server" />
-          <AssociationSet Name="FK_Group_Servers" Association="Cyber20ShadowModel.FK_Group_Servers">
-            <End Role="Server" EntitySet="Servers" />
-            <End Role="Group" EntitySet="Groups" />
-          </AssociationSet>
-          <AssociationSet Name="FK_OriginTable_Servers" Association="Cyber20ShadowModel.FK_OriginTable_Servers">
-            <End Role="Server" EntitySet="Servers" />
-            <End Role="OriginTable" EntitySet="OriginTables" />
-          </AssociationSet>
           <EntitySet Name="OriginTableCategories" EntityType="Cyber20ShadowModel.OriginTableCategory" />
-          <AssociationSet Name="FK_OriginTableCategories_OriginTable" Association="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable">
-            <End Role="OriginTable" EntitySet="OriginTables" />
-            <End Role="OriginTableCategory" EntitySet="OriginTableCategories" />
-          </AssociationSet>
-          <EntitySet Name="Categories" EntityType="Cyber20ShadowModel.Category" />
+          <EntitySet Name="OriginTableUsers" EntityType="Cyber20ShadowModel.OriginTableUser" />
+          <EntitySet Name="Servers" EntityType="Cyber20ShadowModel.Server" />
+          <EntitySet Name="Users" EntityType="Cyber20ShadowModel.User" />
           <AssociationSet Name="FK_OriginTableCategories_Categories" Association="Cyber20ShadowModel.FK_OriginTableCategories_Categories">
             <End Role="Category" EntitySet="Categories" />
             <End Role="OriginTableCategory" EntitySet="OriginTableCategories" />
           </AssociationSet>
-          <EntitySet Name="ClientsMonitors" EntityType="Cyber20ShadowModel.ClientsMonitor" />
-          <EntitySet Name="ClientsMonitorOriginTables" EntityType="Cyber20ShadowModel.ClientsMonitorOriginTable" />
           <AssociationSet Name="FK_ClientsMonitor_Servers" Association="Cyber20ShadowModel.FK_ClientsMonitor_Servers">
             <End Role="Server" EntitySet="Servers" />
             <End Role="ClientsMonitor" EntitySet="ClientsMonitors" />
@@ -326,10 +337,18 @@
             <End Role="OriginTable" EntitySet="OriginTables" />
             <End Role="ClientsMonitorOriginTable" EntitySet="ClientsMonitorOriginTables" />
           </AssociationSet>
-          <FunctionImport Name="QueryListWiteOutDuplicatedRows" ReturnType="Collection(Cyber20ShadowModel.QueryListWiteOutDuplicatedRows_Result)" />
-          <FunctionImport Name="QueryListWiteOutDuplicatedRowsTest" ReturnType="Collection(Cyber20ShadowModel.QueryListWiteOutDuplicatedRowsTest_Result)" />
-          <EntitySet Name="OriginTableUsers" EntityType="Cyber20ShadowModel.OriginTableUser" />
-          <EntitySet Name="Users" EntityType="Cyber20ShadowModel.User" />
+          <AssociationSet Name="FK_Group_Servers" Association="Cyber20ShadowModel.FK_Group_Servers">
+            <End Role="Server" EntitySet="Servers" />
+            <End Role="Group" EntitySet="Groups" />
+          </AssociationSet>
+          <AssociationSet Name="FK_OriginTable_Servers" Association="Cyber20ShadowModel.FK_OriginTable_Servers">
+            <End Role="Server" EntitySet="Servers" />
+            <End Role="OriginTable" EntitySet="OriginTables" />
+          </AssociationSet>
+          <AssociationSet Name="FK_OriginTableCategories_OriginTable" Association="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable">
+            <End Role="OriginTable" EntitySet="OriginTables" />
+            <End Role="OriginTableCategory" EntitySet="OriginTableCategories" />
+          </AssociationSet>
           <AssociationSet Name="FK_OriginTableUser_OriginTable" Association="Cyber20ShadowModel.FK_OriginTableUser_OriginTable">
             <End Role="OriginTable" EntitySet="OriginTables" />
             <End Role="OriginTableUser" EntitySet="OriginTableUsers" />
@@ -338,113 +357,44 @@
             <End Role="User" EntitySet="Users" />
             <End Role="OriginTableUser" EntitySet="OriginTableUsers" />
           </AssociationSet>
-        </EntityContainer>
-        <EntityType Name="Group">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="ServerID" Type="Int32" />
-          <Property Name="Name" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
-          <Property Name="IsActive" Type="Boolean" />
-          <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <NavigationProperty Name="Server" Relationship="Cyber20ShadowModel.FK_Group_Servers" FromRole="Group" ToRole="Server" />
-          <Property Name="License" Type="Int32" />
-          <Property Name="Description" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
-        </EntityType>
-        <EntityType Name="OriginTable">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="ServerID" Type="Int32" />
-          <Property Name="ApplicationName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
-          <Property Name="ApplicationVersion" Type="String" MaxLength="80" FixedLength="false" Unicode="true" />
-          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="DisplayName" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
-          <Property Name="InWhitelist" Type="String" MaxLength="1" FixedLength="false" Unicode="true" />
-          <Property Name="NumOfEnginesDetected" Type="Byte" />
-          <Property Name="ComputerName" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="ClientGroup" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="RequestTime" Type="DateTime" Precision="3" />
-          <Property Name="ApplicationMD5" Type="String" MaxLength="40" FixedLength="false" Unicode="true" />
-          <Property Name="ScanLinks" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
-          <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <Property Name="IsActive" Type="Boolean" />
-          <NavigationProperty Name="Server" Relationship="Cyber20ShadowModel.FK_OriginTable_Servers" FromRole="OriginTable" ToRole="Server" />
-          <Property Name="Remark" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="OriginTableCategories" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable" FromRole="OriginTable" ToRole="OriginTableCategory" />
-          <Property Name="ProcessPath" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="ClientsMonitorOriginTables" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_OriginTable" FromRole="OriginTable" ToRole="ClientsMonitorOriginTable" />
-          <NavigationProperty Name="OriginTableUsers" Relationship="Cyber20ShadowModel.FK_OriginTableUser_OriginTable" FromRole="OriginTable" ToRole="OriginTableUser" />
-        </EntityType>
-        <EntityType Name="Server">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="Name" Type="String" MaxLength="80" FixedLength="false" Unicode="true" />
-          <Property Name="IPAddress" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
-          <Property Name="UserName" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
-          <Property Name="Password" Type="String" MaxLength="40" FixedLength="false" Unicode="true" />
-          <Property Name="LastConnection" Type="DateTime" Precision="3" />
-          <Property Name="RetentionTime" Type="Int32" />
-          <Property Name="LastApplicationsTableID" Type="Int32" />
-          <Property Name="NextRetentionTime" Type="DateTime" Precision="3" />
-          <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <Property Name="UpdateDate" Type="DateTime" Precision="3" />
-          <Property Name="IsActive" Type="Boolean" />
-          <NavigationProperty Name="Groups" Relationship="Cyber20ShadowModel.FK_Group_Servers" FromRole="Server" ToRole="Group" />
-          <NavigationProperty Name="OriginTables" Relationship="Cyber20ShadowModel.FK_OriginTable_Servers" FromRole="Server" ToRole="OriginTable" />
-          <NavigationProperty Name="ClientsMonitors" Relationship="Cyber20ShadowModel.FK_ClientsMonitor_Servers" FromRole="Server" ToRole="ClientsMonitor" />
-        </EntityType>
-        <Association Name="FK_Group_Servers">
-          <End Type="Cyber20ShadowModel.Server" Role="Server" Multiplicity="0..1" />
-          <End Type="Cyber20ShadowModel.Group" Role="Group" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Server">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="Group">
-              <PropertyRef Name="ServerID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
-        <Association Name="FK_OriginTable_Servers">
-          <End Type="Cyber20ShadowModel.Server" Role="Server" Multiplicity="0..1" />
-          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Server">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="OriginTable">
-              <PropertyRef Name="ServerID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
-        <EntityType Name="OriginTableCategory">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="CategoryID" Type="Int32" Nullable="false" />
-          <Property Name="OriginTableID" Type="Int32" Nullable="false" />
-          <Property Name="CreateDate" Type="DateTime" Nullable="false" Precision="3" />
-          <NavigationProperty Name="OriginTable" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable" FromRole="OriginTableCategory" ToRole="OriginTable" />
-          <NavigationProperty Name="Category" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_Categories" FromRole="OriginTableCategory" ToRole="Category" />
-        </EntityType>
-        <Association Name="FK_OriginTableCategories_OriginTable">
-          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="1" />
-          <End Type="Cyber20ShadowModel.OriginTableCategory" Role="OriginTableCategory" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="OriginTable">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="OriginTableCategory">
-              <PropertyRef Name="OriginTableID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
+          </EntityContainer>
+        <ComplexType Name="QueryListWiteOutDuplicatedRows_Result">
+          <Property Type="Int32" Name="ServerID" Nullable="true" />
+          <Property Type="String" Name="ApplicationName" Nullable="true" MaxLength="100" />
+          <Property Type="String" Name="ApplicationVersion" Nullable="true" MaxLength="80" />
+          <Property Type="String" Name="Status" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="DisplayName" Nullable="true" MaxLength="150" />
+          <Property Type="String" Name="InWhitelist" Nullable="true" MaxLength="1" />
+          <Property Type="Byte" Name="NumOfEnginesDetected" Nullable="true" />
+          <Property Type="String" Name="ComputerName" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="ClientGroup" Nullable="true" MaxLength="50" />
+          <Property Type="DateTime" Name="RequestTime" Nullable="true" Precision="23" />
+          <Property Type="String" Name="ApplicationMD5" Nullable="true" MaxLength="40" />
+          <Property Type="String" Name="ScanLinks" Nullable="true" MaxLength="1000" />
+          <Property Type="Boolean" Name="IsActive" Nullable="true" />
+          <Property Type="String" Name="Remark" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="ProcessPath" Nullable="true" MaxLength="1000" />
+          <Property Type="Int64" Name="row_num" Nullable="true" />
+        </ComplexType>
+        <ComplexType Name="QueryListWiteOutDuplicatedRowsTest_Result">
+          <Property Type="Int32" Name="ID" Nullable="false" />
+          <Property Type="Int32" Name="ServerID" Nullable="true" />
+          <Property Type="String" Name="ApplicationName" Nullable="true" MaxLength="100" />
+          <Property Type="String" Name="ApplicationVersion" Nullable="true" MaxLength="80" />
+          <Property Type="String" Name="Status" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="DisplayName" Nullable="true" MaxLength="150" />
+          <Property Type="String" Name="InWhitelist" Nullable="true" MaxLength="1" />
+          <Property Type="Byte" Name="NumOfEnginesDetected" Nullable="true" />
+          <Property Type="String" Name="ComputerName" Nullable="true" MaxLength="50" />
+          <Property Type="String" Name="ClientGroup" Nullable="true" MaxLength="50" />
+          <Property Type="DateTime" Name="RequestTime" Nullable="true" Precision="23" />
+          <Property Type="String" Name="ApplicationMD5" Nullable="true" MaxLength="40" />
+          <Property Type="String" Name="ScanLinks" Nullable="true" MaxLength="1000" />
+          <Property Type="Boolean" Name="IsActive" Nullable="true" />
+          <Property Type="String" Name="Remark" Nullable="true" MaxLength="500" />
+          <Property Type="String" Name="ProcessPath" Nullable="true" MaxLength="1000" />
+          <Property Type="Int64" Name="row_num" Nullable="true" />
+        </ComplexType>
         <EntityType Name="Category">
           <Key>
             <PropertyRef Name="ID" />
@@ -453,25 +403,13 @@
           <Property Name="Name" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
           <Property Name="Action" Type="String" MaxLength="200" FixedLength="false" Unicode="true" />
           <Property Name="Color" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
           <Property Name="ParentID" Type="Int32" Nullable="false" />
           <Property Name="IsActive" Type="Boolean" />
           <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <NavigationProperty Name="OriginTableCategories" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_Categories" FromRole="Category" ToRole="OriginTableCategory" />
-          <Property Name="Description" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
           <Property Name="Position" Type="Int32" />
+          <NavigationProperty Name="OriginTableCategories" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_Categories" FromRole="Category" ToRole="OriginTableCategory" />
         </EntityType>
-        <Association Name="FK_OriginTableCategories_Categories">
-          <End Type="Cyber20ShadowModel.Category" Role="Category" Multiplicity="1" />
-          <End Type="Cyber20ShadowModel.OriginTableCategory" Role="OriginTableCategory" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Category">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="OriginTableCategory">
-              <PropertyRef Name="CategoryID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         <EntityType Name="ClientsMonitor">
           <Key>
             <PropertyRef Name="ID" />
@@ -513,11 +451,123 @@
           </Key>
           <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <Property Name="OriginTableID" Type="Int32" />
+          <Property Name="OriginTableID" Type="Int32" Nullable="false" />
           <Property Name="ClientsMonitorID" Type="Int32" />
+          <Property Name="IsReported" Type="Boolean" />
+          <Property Name="IsWached" Type="Boolean" />
+          <Property Name="RequestTime" Type="DateTime" Precision="3" />
           <NavigationProperty Name="ClientsMonitor" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_ClientsMonitor" FromRole="ClientsMonitorOriginTable" ToRole="ClientsMonitor" />
           <NavigationProperty Name="OriginTable" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_OriginTable" FromRole="ClientsMonitorOriginTable" ToRole="OriginTable" />
         </EntityType>
+        <EntityType Name="Group">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ServerID" Type="Int32" />
+          <Property Name="Name" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Description" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="License" Type="Int32" />
+          <Property Name="IsActive" Type="Boolean" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="Server" Relationship="Cyber20ShadowModel.FK_Group_Servers" FromRole="Group" ToRole="Server" />
+        </EntityType>
+        <EntityType Name="OriginTable">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="ServerID" Type="Int32" />
+          <Property Name="ApplicationName" Type="String" MaxLength="100" FixedLength="false" Unicode="true" />
+          <Property Name="ApplicationVersion" Type="String" MaxLength="80" FixedLength="false" Unicode="true" />
+          <Property Name="Status" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="DisplayName" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="InWhitelist" Type="String" MaxLength="1" FixedLength="false" Unicode="true" />
+          <Property Name="NumOfEnginesDetected" Type="Byte" />
+          <Property Name="ComputerName" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="ClientGroup" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="RequestTime" Type="DateTime" Precision="3" />
+          <Property Name="ApplicationMD5" Type="String" MaxLength="40" FixedLength="false" Unicode="true" />
+          <Property Name="ScanLinks" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
+          <Property Name="IsActive" Type="Boolean" />
+          <Property Name="Remark" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="ProcessPath" Type="String" MaxLength="1000" FixedLength="false" Unicode="true" />
+          <NavigationProperty Name="ClientsMonitorOriginTables" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_OriginTable" FromRole="OriginTable" ToRole="ClientsMonitorOriginTable" />
+          <NavigationProperty Name="Server" Relationship="Cyber20ShadowModel.FK_OriginTable_Servers" FromRole="OriginTable" ToRole="Server" />
+          <NavigationProperty Name="OriginTableCategories" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable" FromRole="OriginTable" ToRole="OriginTableCategory" />
+          <NavigationProperty Name="OriginTableUsers" Relationship="Cyber20ShadowModel.FK_OriginTableUser_OriginTable" FromRole="OriginTable" ToRole="OriginTableUser" />
+        </EntityType>
+        <EntityType Name="OriginTableCategory">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="CategoryID" Type="Int32" Nullable="false" />
+          <Property Name="OriginTableID" Type="Int32" Nullable="false" />
+          <Property Name="CreateDate" Type="DateTime" Nullable="false" Precision="3" />
+          <NavigationProperty Name="Category" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_Categories" FromRole="OriginTableCategory" ToRole="Category" />
+          <NavigationProperty Name="OriginTable" Relationship="Cyber20ShadowModel.FK_OriginTableCategories_OriginTable" FromRole="OriginTableCategory" ToRole="OriginTable" />
+        </EntityType>
+        <EntityType Name="OriginTableUser">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="OriginTableID" Type="Int32" />
+          <Property Name="UserID" Type="Int32" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="OriginTable" Relationship="Cyber20ShadowModel.FK_OriginTableUser_OriginTable" FromRole="OriginTableUser" ToRole="OriginTable" />
+          <NavigationProperty Name="User" Relationship="Cyber20ShadowModel.FK_OriginTableUser_User" FromRole="OriginTableUser" ToRole="User" />
+        </EntityType>
+        <EntityType Name="Server">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="Name" Type="String" MaxLength="80" FixedLength="false" Unicode="true" />
+          <Property Name="IPAddress" Type="String" MaxLength="50" FixedLength="false" Unicode="true" />
+          <Property Name="UserName" Type="String" MaxLength="150" FixedLength="false" Unicode="true" />
+          <Property Name="Password" Type="String" MaxLength="40" FixedLength="false" Unicode="true" />
+          <Property Name="LastConnection" Type="DateTime" Precision="3" />
+          <Property Name="RetentionTime" Type="Int32" />
+          <Property Name="LastApplicationsTableID" Type="Int32" />
+          <Property Name="NextRetentionTime" Type="DateTime" Precision="3" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
+          <Property Name="UpdateDate" Type="DateTime" Precision="3" />
+          <Property Name="IsActive" Type="Boolean" />
+          <NavigationProperty Name="ClientsMonitors" Relationship="Cyber20ShadowModel.FK_ClientsMonitor_Servers" FromRole="Server" ToRole="ClientsMonitor" />
+          <NavigationProperty Name="Groups" Relationship="Cyber20ShadowModel.FK_Group_Servers" FromRole="Server" ToRole="Group" />
+          <NavigationProperty Name="OriginTables" Relationship="Cyber20ShadowModel.FK_OriginTable_Servers" FromRole="Server" ToRole="OriginTable" />
+        </EntityType>
+        <EntityType Name="User">
+          <Key>
+            <PropertyRef Name="ID" />
+          </Key>
+          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="UserName" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="Email" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
+          <Property Name="HashedPassword" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="Salt" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
+          <Property Name="IsActive" Type="Boolean" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
+          <Property Name="UpdateDate" Type="DateTime" Precision="3" />
+          <Property Name="ShowStatus" Type="Boolean" />
+          <Property Name="LastPasswordChangedDate" Type="DateTime" Precision="3" />
+          <NavigationProperty Name="OriginTableUsers" Relationship="Cyber20ShadowModel.FK_OriginTableUser_User" FromRole="User" ToRole="OriginTableUser" />
+        </EntityType>
+        <Association Name="FK_OriginTableCategories_Categories">
+          <End Type="Cyber20ShadowModel.Category" Role="Category" Multiplicity="1" />
+          <End Type="Cyber20ShadowModel.OriginTableCategory" Role="OriginTableCategory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Category">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="OriginTableCategory">
+              <PropertyRef Name="CategoryID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK_ClientsMonitor_Servers">
           <End Type="Cyber20ShadowModel.Server" Role="Server" Multiplicity="0..1" />
           <End Type="Cyber20ShadowModel.ClientsMonitor" Role="ClientsMonitor" Multiplicity="*" />
@@ -543,7 +593,7 @@
           </ReferentialConstraint>
         </Association>
         <Association Name="FK_ClientsMonitorOriginTable_OriginTable">
-          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="0..1" />
+          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="1" />
           <End Type="Cyber20ShadowModel.ClientsMonitorOriginTable" Role="ClientsMonitorOriginTable" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="OriginTable">
@@ -554,70 +604,42 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <ComplexType Name="QueryListWiteOutDuplicatedRows_Result">
-          <Property Type="Int32" Name="ServerID" Nullable="true" />
-          <Property Type="String" Name="ApplicationName" Nullable="true" MaxLength="100" />
-          <Property Type="String" Name="ApplicationVersion" Nullable="true" MaxLength="80" />
-          <Property Type="String" Name="Status" Nullable="true" MaxLength="50" />
-          <Property Type="String" Name="DisplayName" Nullable="true" MaxLength="150" />
-          <Property Type="String" Name="InWhitelist" Nullable="true" MaxLength="1" />
-          <Property Type="Byte" Name="NumOfEnginesDetected" Nullable="true" />
-          <Property Type="String" Name="ComputerName" Nullable="true" MaxLength="50" />
-          <Property Type="String" Name="ClientGroup" Nullable="true" MaxLength="50" />
-          <Property Type="DateTime" Name="RequestTime" Nullable="true" Precision="23" />
-          <Property Type="String" Name="ApplicationMD5" Nullable="true" MaxLength="40" />
-          <Property Type="String" Name="ScanLinks" Nullable="true" MaxLength="1000" />
-          <Property Type="Boolean" Name="IsActive" Nullable="true" />
-          <Property Type="String" Name="Remark" Nullable="true" MaxLength="500" />
-          <Property Type="String" Name="ProcessPath" Nullable="true" MaxLength="1000" />
-          <Property Type="Int64" Name="row_num" Nullable="true" />
-        </ComplexType>
-        <ComplexType Name="QueryListWiteOutDuplicatedRowsTest_Result">
-          <Property Type="Int32" Name="ID" Nullable="false" />
-          <Property Type="Int32" Name="ServerID" Nullable="true" />
-          <Property Type="String" Name="ApplicationName" Nullable="true" MaxLength="100" />
-          <Property Type="String" Name="ApplicationVersion" Nullable="true" MaxLength="80" />
-          <Property Type="String" Name="Status" Nullable="true" MaxLength="50" />
-          <Property Type="String" Name="DisplayName" Nullable="true" MaxLength="150" />
-          <Property Type="String" Name="InWhitelist" Nullable="true" MaxLength="1" />
-          <Property Type="Byte" Name="NumOfEnginesDetected" Nullable="true" />
-          <Property Type="String" Name="ComputerName" Nullable="true" MaxLength="50" />
-          <Property Type="String" Name="ClientGroup" Nullable="true" MaxLength="50" />
-          <Property Type="DateTime" Name="RequestTime" Nullable="true" Precision="23" />
-          <Property Type="String" Name="ApplicationMD5" Nullable="true" MaxLength="40" />
-          <Property Type="String" Name="ScanLinks" Nullable="true" MaxLength="1000" />
-          <Property Type="Boolean" Name="IsActive" Nullable="true" />
-          <Property Type="String" Name="Remark" Nullable="true" MaxLength="500" />
-          <Property Type="String" Name="ProcessPath" Nullable="true" MaxLength="1000" />
-          <Property Type="Int64" Name="row_num" Nullable="true" />
-        </ComplexType>
-        <EntityType Name="OriginTableUser">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="OriginTableID" Type="Int32" />
-          <Property Name="UserID" Type="Int32" />
-          <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <NavigationProperty Name="OriginTable" Relationship="Cyber20ShadowModel.FK_OriginTableUser_OriginTable" FromRole="OriginTableUser" ToRole="OriginTable" />
-          <NavigationProperty Name="User" Relationship="Cyber20ShadowModel.FK_OriginTableUser_User" FromRole="OriginTableUser" ToRole="User" />
-        </EntityType>
-        <EntityType Name="User">
-          <Key>
-            <PropertyRef Name="ID" />
-          </Key>
-          <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
-          <Property Name="UserName" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
-          <Property Name="Email" Type="String" MaxLength="250" FixedLength="false" Unicode="true" />
-          <Property Name="HashedPassword" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
-          <Property Name="Salt" Type="String" MaxLength="500" FixedLength="false" Unicode="true" />
-          <Property Name="IsActive" Type="Boolean" />
-          <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <Property Name="UpdateDate" Type="DateTime" Precision="3" />
-          <Property Name="ShowStatus" Type="Boolean" />
-          <Property Name="LastPasswordChangedDate" Type="DateTime" Precision="3" />
-          <NavigationProperty Name="OriginTableUsers" Relationship="Cyber20ShadowModel.FK_OriginTableUser_User" FromRole="User" ToRole="OriginTableUser" />
-        </EntityType>
+        <Association Name="FK_Group_Servers">
+          <End Type="Cyber20ShadowModel.Server" Role="Server" Multiplicity="0..1" />
+          <End Type="Cyber20ShadowModel.Group" Role="Group" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Server">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="Group">
+              <PropertyRef Name="ServerID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_OriginTable_Servers">
+          <End Type="Cyber20ShadowModel.Server" Role="Server" Multiplicity="0..1" />
+          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="Server">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="OriginTable">
+              <PropertyRef Name="ServerID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="FK_OriginTableCategories_OriginTable">
+          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="1" />
+          <End Type="Cyber20ShadowModel.OriginTableCategory" Role="OriginTableCategory" Multiplicity="*" />
+          <ReferentialConstraint>
+            <Principal Role="OriginTable">
+              <PropertyRef Name="ID" />
+            </Principal>
+            <Dependent Role="OriginTableCategory">
+              <PropertyRef Name="OriginTableID" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
         <Association Name="FK_OriginTableUser_OriginTable">
           <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="0..1" />
           <End Type="Cyber20ShadowModel.OriginTableUser" Role="OriginTableUser" Multiplicity="*" />
@@ -648,129 +670,6 @@
     <edmx:Mappings>
       <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
         <EntityContainerMapping StorageEntityContainer="Cyber20ShadowModelStoreContainer" CdmEntityContainer="Cyber20ShadowEntities">
-          <EntitySetMapping Name="Groups">
-            <EntityTypeMapping TypeName="Cyber20ShadowModel.Group">
-              <MappingFragment StoreEntitySet="Group">
-                <ScalarProperty Name="Description" ColumnName="Description" />
-                <ScalarProperty Name="License" ColumnName="License" />
-                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
-                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
-                <ScalarProperty Name="Name" ColumnName="Name" />
-                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="OriginTables">
-            <EntityTypeMapping TypeName="Cyber20ShadowModel.OriginTable">
-              <MappingFragment StoreEntitySet="OriginTable">
-                <ScalarProperty Name="ProcessPath" ColumnName="ProcessPath" />
-                <ScalarProperty Name="Remark" ColumnName="Remark" />
-                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
-                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
-                <ScalarProperty Name="ScanLinks" ColumnName="ScanLinks" />
-                <ScalarProperty Name="ApplicationMD5" ColumnName="ApplicationMD5" />
-                <ScalarProperty Name="RequestTime" ColumnName="RequestTime" />
-                <ScalarProperty Name="ClientGroup" ColumnName="ClientGroup" />
-                <ScalarProperty Name="ComputerName" ColumnName="ComputerName" />
-                <ScalarProperty Name="NumOfEnginesDetected" ColumnName="NumOfEnginesDetected" />
-                <ScalarProperty Name="InWhitelist" ColumnName="InWhitelist" />
-                <ScalarProperty Name="DisplayName" ColumnName="DisplayName" />
-                <ScalarProperty Name="Status" ColumnName="Status" />
-                <ScalarProperty Name="ApplicationVersion" ColumnName="ApplicationVersion" />
-                <ScalarProperty Name="ApplicationName" ColumnName="ApplicationName" />
-                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="Servers">
-            <EntityTypeMapping TypeName="Cyber20ShadowModel.Server">
-              <MappingFragment StoreEntitySet="Servers">
-                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
-                <ScalarProperty Name="UpdateDate" ColumnName="UpdateDate" />
-                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
-                <ScalarProperty Name="NextRetentionTime" ColumnName="NextRetentionTime" />
-                <ScalarProperty Name="LastApplicationsTableID" ColumnName="LastApplicationsTableID" />
-                <ScalarProperty Name="RetentionTime" ColumnName="RetentionTime" />
-                <ScalarProperty Name="LastConnection" ColumnName="LastConnection" />
-                <ScalarProperty Name="Password" ColumnName="Password" />
-                <ScalarProperty Name="UserName" ColumnName="UserName" />
-                <ScalarProperty Name="IPAddress" ColumnName="IPAddress" />
-                <ScalarProperty Name="Name" ColumnName="Name" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="OriginTableCategories">
-            <EntityTypeMapping TypeName="Cyber20ShadowModel.OriginTableCategory">
-              <MappingFragment StoreEntitySet="OriginTableCategories">
-                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
-                <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
-                <ScalarProperty Name="CategoryID" ColumnName="CategoryID" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="Categories">
-            <EntityTypeMapping TypeName="Cyber20ShadowModel.Category">
-              <MappingFragment StoreEntitySet="Categories">
-                <ScalarProperty Name="Position" ColumnName="Position" />
-                <ScalarProperty Name="Description" ColumnName="Description" />
-                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
-                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
-                <ScalarProperty Name="ParentID" ColumnName="ParentID" />
-                <ScalarProperty Name="Color" ColumnName="Color" />
-                <ScalarProperty Name="Action" ColumnName="Action" />
-                <ScalarProperty Name="Name" ColumnName="Name" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="ClientsMonitors">
-            <EntityTypeMapping TypeName="Cyber20ShadowModel.ClientsMonitor">
-              <MappingFragment StoreEntitySet="ClientsMonitor">
-                <ScalarProperty Name="CurrentPublicKey" ColumnName="CurrentPublicKey" />
-                <ScalarProperty Name="UniqueID" ColumnName="UniqueID" />
-                <ScalarProperty Name="LastWhiteListUpdate" ColumnName="LastWhiteListUpdate" />
-                <ScalarProperty Name="LastCertificateUpdate" ColumnName="LastCertificateUpdate" />
-                <ScalarProperty Name="GUID" ColumnName="GUID" />
-                <ScalarProperty Name="IsScrambledRequired" ColumnName="IsScrambledRequired" />
-                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
-                <ScalarProperty Name="ClientGroup" ColumnName="ClientGroup" />
-                <ScalarProperty Name="ClientDescription" ColumnName="ClientDescription" />
-                <ScalarProperty Name="LastWhiteListDataInsert" ColumnName="LastWhiteListDataInsert" />
-                <ScalarProperty Name="IsScrambled" ColumnName="IsScrambled" />
-                <ScalarProperty Name="ReconnaissanceVersion" ColumnName="ReconnaissanceVersion" />
-                <ScalarProperty Name="ServiceVersion" ColumnName="ServiceVersion" />
-                <ScalarProperty Name="SUPVersion" ColumnName="SUPVersion" />
-                <ScalarProperty Name="LogSenderVersion" ColumnName="LogSenderVersion" />
-                <ScalarProperty Name="ClientOSVersion" ColumnName="ClientOSVersion" />
-                <ScalarProperty Name="DriverVersion" ColumnName="DriverVersion" />
-                <ScalarProperty Name="UIVersion" ColumnName="UIVersion" />
-                <ScalarProperty Name="ConnectionStatus" ColumnName="ConnectionStatus" />
-                <ScalarProperty Name="WhiteListVersion" ColumnName="WhiteListVersion" />
-                <ScalarProperty Name="CertificateStatus" ColumnName="CertificateStatus" />
-                <ScalarProperty Name="ClientStatus" ColumnName="ClientStatus" />
-                <ScalarProperty Name="LogedInUser" ColumnName="LogedInUser" />
-                <ScalarProperty Name="ClientMAC" ColumnName="ClientMAC" />
-                <ScalarProperty Name="ClientIP" ColumnName="ClientIP" />
-                <ScalarProperty Name="ClientName" ColumnName="ClientName" />
-                <ScalarProperty Name="TimeStamp" ColumnName="TimeStamp" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
-          <EntitySetMapping Name="ClientsMonitorOriginTables">
-            <EntityTypeMapping TypeName="Cyber20ShadowModel.ClientsMonitorOriginTable">
-              <MappingFragment StoreEntitySet="ClientsMonitorOriginTable">
-                <ScalarProperty Name="ClientsMonitorID" ColumnName="ClientsMonitorID" />
-                <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
-                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
-                <ScalarProperty Name="ID" ColumnName="ID" />
-              </MappingFragment>
-            </EntityTypeMapping>
-          </EntitySetMapping>
           <FunctionImportMapping FunctionImportName="QueryListWiteOutDuplicatedRows" FunctionName="Cyber20ShadowModel.Store.QueryListWiteOutDuplicatedRows">
             <ResultMapping>
               <ComplexTypeMapping TypeName="Cyber20ShadowModel.QueryListWiteOutDuplicatedRows_Result">
@@ -816,12 +715,138 @@
               </ComplexTypeMapping>
             </ResultMapping>
           </FunctionImportMapping>
+          <EntitySetMapping Name="Categories">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.Category">
+              <MappingFragment StoreEntitySet="Categories">
+                <ScalarProperty Name="Position" ColumnName="Position" />
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="ParentID" ColumnName="ParentID" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Color" ColumnName="Color" />
+                <ScalarProperty Name="Action" ColumnName="Action" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ClientsMonitors">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.ClientsMonitor">
+              <MappingFragment StoreEntitySet="ClientsMonitor">
+                <ScalarProperty Name="CurrentPublicKey" ColumnName="CurrentPublicKey" />
+                <ScalarProperty Name="UniqueID" ColumnName="UniqueID" />
+                <ScalarProperty Name="LastWhiteListUpdate" ColumnName="LastWhiteListUpdate" />
+                <ScalarProperty Name="LastCertificateUpdate" ColumnName="LastCertificateUpdate" />
+                <ScalarProperty Name="GUID" ColumnName="GUID" />
+                <ScalarProperty Name="IsScrambledRequired" ColumnName="IsScrambledRequired" />
+                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
+                <ScalarProperty Name="ClientGroup" ColumnName="ClientGroup" />
+                <ScalarProperty Name="ClientDescription" ColumnName="ClientDescription" />
+                <ScalarProperty Name="LastWhiteListDataInsert" ColumnName="LastWhiteListDataInsert" />
+                <ScalarProperty Name="IsScrambled" ColumnName="IsScrambled" />
+                <ScalarProperty Name="ReconnaissanceVersion" ColumnName="ReconnaissanceVersion" />
+                <ScalarProperty Name="ServiceVersion" ColumnName="ServiceVersion" />
+                <ScalarProperty Name="SUPVersion" ColumnName="SUPVersion" />
+                <ScalarProperty Name="LogSenderVersion" ColumnName="LogSenderVersion" />
+                <ScalarProperty Name="ClientOSVersion" ColumnName="ClientOSVersion" />
+                <ScalarProperty Name="DriverVersion" ColumnName="DriverVersion" />
+                <ScalarProperty Name="UIVersion" ColumnName="UIVersion" />
+                <ScalarProperty Name="ConnectionStatus" ColumnName="ConnectionStatus" />
+                <ScalarProperty Name="WhiteListVersion" ColumnName="WhiteListVersion" />
+                <ScalarProperty Name="CertificateStatus" ColumnName="CertificateStatus" />
+                <ScalarProperty Name="ClientStatus" ColumnName="ClientStatus" />
+                <ScalarProperty Name="LogedInUser" ColumnName="LogedInUser" />
+                <ScalarProperty Name="ClientMAC" ColumnName="ClientMAC" />
+                <ScalarProperty Name="ClientIP" ColumnName="ClientIP" />
+                <ScalarProperty Name="ClientName" ColumnName="ClientName" />
+                <ScalarProperty Name="TimeStamp" ColumnName="TimeStamp" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="ClientsMonitorOriginTables">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.ClientsMonitorOriginTable">
+              <MappingFragment StoreEntitySet="ClientsMonitorOriginTable">
+                <ScalarProperty Name="RequestTime" ColumnName="RequestTime" />
+                <ScalarProperty Name="IsWached" ColumnName="IsWached" />
+                <ScalarProperty Name="IsReported" ColumnName="IsReported" />
+                <ScalarProperty Name="ClientsMonitorID" ColumnName="ClientsMonitorID" />
+                <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Groups">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.Group">
+              <MappingFragment StoreEntitySet="Group">
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="License" ColumnName="License" />
+                <ScalarProperty Name="Description" ColumnName="Description" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
+                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="OriginTables">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.OriginTable">
+              <MappingFragment StoreEntitySet="OriginTable">
+                <ScalarProperty Name="ProcessPath" ColumnName="ProcessPath" />
+                <ScalarProperty Name="Remark" ColumnName="Remark" />
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="ScanLinks" ColumnName="ScanLinks" />
+                <ScalarProperty Name="ApplicationMD5" ColumnName="ApplicationMD5" />
+                <ScalarProperty Name="RequestTime" ColumnName="RequestTime" />
+                <ScalarProperty Name="ClientGroup" ColumnName="ClientGroup" />
+                <ScalarProperty Name="ComputerName" ColumnName="ComputerName" />
+                <ScalarProperty Name="NumOfEnginesDetected" ColumnName="NumOfEnginesDetected" />
+                <ScalarProperty Name="InWhitelist" ColumnName="InWhitelist" />
+                <ScalarProperty Name="DisplayName" ColumnName="DisplayName" />
+                <ScalarProperty Name="Status" ColumnName="Status" />
+                <ScalarProperty Name="ApplicationVersion" ColumnName="ApplicationVersion" />
+                <ScalarProperty Name="ApplicationName" ColumnName="ApplicationName" />
+                <ScalarProperty Name="ServerID" ColumnName="ServerID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="OriginTableCategories">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.OriginTableCategory">
+              <MappingFragment StoreEntitySet="OriginTableCategories">
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
+                <ScalarProperty Name="CategoryID" ColumnName="CategoryID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
           <EntitySetMapping Name="OriginTableUsers">
             <EntityTypeMapping TypeName="Cyber20ShadowModel.OriginTableUser">
               <MappingFragment StoreEntitySet="OriginTableUser">
                 <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
                 <ScalarProperty Name="UserID" ColumnName="UserID" />
                 <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
+                <ScalarProperty Name="ID" ColumnName="ID" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="Servers">
+            <EntityTypeMapping TypeName="Cyber20ShadowModel.Server">
+              <MappingFragment StoreEntitySet="Servers">
+                <ScalarProperty Name="IsActive" ColumnName="IsActive" />
+                <ScalarProperty Name="UpdateDate" ColumnName="UpdateDate" />
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
+                <ScalarProperty Name="NextRetentionTime" ColumnName="NextRetentionTime" />
+                <ScalarProperty Name="LastApplicationsTableID" ColumnName="LastApplicationsTableID" />
+                <ScalarProperty Name="RetentionTime" ColumnName="RetentionTime" />
+                <ScalarProperty Name="LastConnection" ColumnName="LastConnection" />
+                <ScalarProperty Name="Password" ColumnName="Password" />
+                <ScalarProperty Name="UserName" ColumnName="UserName" />
+                <ScalarProperty Name="IPAddress" ColumnName="IPAddress" />
+                <ScalarProperty Name="Name" ColumnName="Name" />
                 <ScalarProperty Name="ID" ColumnName="ID" />
               </MappingFragment>
             </EntityTypeMapping>
@@ -842,7 +867,7 @@
               </MappingFragment>
             </EntityTypeMapping>
           </EntitySetMapping>
-        </EntityContainerMapping>
+          </EntityContainerMapping>
       </Mapping>
     </edmx:Mappings>
   </edmx:Runtime>

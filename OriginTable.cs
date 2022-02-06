@@ -17,8 +17,8 @@ namespace Cyber20ShadowServer
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2214:DoNotCallOverridableMethodsInConstructors")]
         public OriginTable()
         {
-            this.OriginTableCategories = new HashSet<OriginTableCategory>();
             this.ClientsMonitorOriginTables = new HashSet<ClientsMonitorOriginTable>();
+            this.OriginTableCategories = new HashSet<OriginTableCategory>();
             this.OriginTableUsers = new HashSet<OriginTableUser>();
         }
     
@@ -40,11 +40,11 @@ namespace Cyber20ShadowServer
         public string Remark { get; set; }
         public string ProcessPath { get; set; }
     
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+        public virtual ICollection<ClientsMonitorOriginTable> ClientsMonitorOriginTables { get; set; }
         public virtual Server Server { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<OriginTableCategory> OriginTableCategories { get; set; }
-        [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
-        public virtual ICollection<ClientsMonitorOriginTable> ClientsMonitorOriginTables { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<OriginTableUser> OriginTableUsers { get; set; }
     }
