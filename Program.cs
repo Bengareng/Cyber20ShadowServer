@@ -37,7 +37,6 @@ namespace Cyber20ShadowServer
 
                 var SuspiciousAppNeedToReport = OriginShadowConnection(user);
 
-
                 if (SuspiciousAppNeedToReport.Any())
                 {
                     var appsByGroups = SuspiciousAppNeedToReport.GroupBy(x => new { x.Server, x.ClientGroup }, (key, x) => x.FirstOrDefault()).ToList();
@@ -53,8 +52,9 @@ namespace Cyber20ShadowServer
                         if (emails.Any())
                         {
                             string ss = CreateFolderFileForExcel("Report", "EmailAlert") + $"\\Cyber 2.0-{item.ClientGroup}.csv";
-                            var userSuspiciousApp = SuspiciousAppNeedToReport.Where(x => x.ServerID == item.ServerID && x.ClientGroup == item.ClientGroup);
-                            userSuspiciousApp.WriteToCSV(ss);
+                             var userSuspiciousApp = SuspiciousAppNeedToReport.Where(x => x.ServerID == item.ServerID && x.ClientGroup == item.ClientGroup);
+
+                            userSuspiciousApp.Select(x => new { x.ApplicationName, x.ClientGroup, x.ApplicationMD5, x.ApplicationVersion, x.ComputerName, x.DisplayName, x.NumOfEnginesDetected, x.ScanLinks, x.Status, x.CreateDate }).WriteToCSV(ss);
                             if (SendMail(ss, emails, userSuspiciousApp))
                                 File.Delete(ss);
                         }
@@ -738,7 +738,7 @@ namespace Cyber20ShadowServer
         }
 
 
-        static string TableTemplateHtml(IEnumerable<OriginTable> originTables)
+        static string TableTemplateHtml(IEnumerable<object> originTables)
         {
 
             StringBuilder sb = new StringBuilder();
@@ -757,10 +757,10 @@ namespace Cyber20ShadowServer
                 "<th>DisplayName</th>" +
                 "<th>NumOfEnginesDetected</th>" +
                 "<th>ScanLinks</th>" +
-                "<th>CreateDate</th>" +
+                "<th>Status</th>" +
                 "<th>CreateDate</th>" +
                 "</tr>");
-            foreach (var origin in originTables)
+            foreach (OriginTable origin in originTables)
             {
                 string color = origin.NumOfEnginesDetected > 9 ? "red" : "orange";
                 sb.Append("<tr color='red'>");

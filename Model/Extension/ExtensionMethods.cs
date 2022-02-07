@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Newtonsoft.Json;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -36,6 +37,16 @@ namespace Cyber20ShadowServer.Model.Extension
                 }
             }
 
+        }
+        public static T ToObject<T>(this Object fromObject)
+        {
+            return JsonConvert.DeserializeObject<T>(JsonConvert.SerializeObject(fromObject));
+        }
+
+
+        public static List<T> ToObjectList<T>(this Object fromObject)
+        {
+            return JsonConvert.DeserializeObject<List<T>>(JsonConvert.SerializeObject(fromObject));
         }
 
     }
