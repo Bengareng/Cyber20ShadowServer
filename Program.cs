@@ -25,6 +25,7 @@ namespace Cyber20ShadowServer
     {
         static readonly Cyber20ShadowEntities db = new Cyber20ShadowEntities();
         static readonly SqlConnectionStringBuilder builder = new SqlConnectionStringBuilder(db.Database.Connection.ConnectionString);
+        static readonly string virusTotalKey = ConfigurationManager.AppSettings["x-apikey"];
 
         //static readonly bool flag = true;
         private const int VirusTotalRequestRate = 1000;
@@ -52,7 +53,7 @@ namespace Cyber20ShadowServer
                         if (emails.Any())
                         {
                             string ss = CreateFolderFileForExcel("Report", "EmailAlert") + $"\\Cyber 2.0-{item.ClientGroup}.csv";
-                             var userSuspiciousApp = SuspiciousAppNeedToReport.Where(x => x.ServerID == item.ServerID && x.ClientGroup == item.ClientGroup);
+                            var userSuspiciousApp = SuspiciousAppNeedToReport.Where(x => x.ServerID == item.ServerID && x.ClientGroup == item.ClientGroup);
 
                             userSuspiciousApp.Select(x => new { x.ApplicationName, x.ClientGroup, x.ApplicationMD5, x.ApplicationVersion, x.ComputerName, x.DisplayName, x.NumOfEnginesDetected, x.ScanLinks, x.Status, x.CreateDate }).WriteToCSV(ss);
                             if (SendMail(ss, emails, userSuspiciousApp))
@@ -150,7 +151,7 @@ namespace Cyber20ShadowServer
                                             var scannerByAdministrator = db.Database.SqlQuery<OriginTableUser>(q).ToList().Count();
 
                                             //var scannerByAdministrator = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Date == DateTime.Now.Date);
-                                            if (scannerByAdministrator < VirusTotalRequestRate)
+                                            if (scannerByAdministrator < VirusTotalRequestRate && !string.IsNullOrEmpty(virusTotalKey))
                                                 InternalStore.ToList().ForEach(x =>
                                                 {
                                                     x.ID = 0;
@@ -563,7 +564,8 @@ namespace Cyber20ShadowServer
             var client = new RestClient($"https://www.virustotal.com/api/v3/files/{md5}");
             var request = new RestRequest(Method.GET);
             request.AddHeader("Accept", "application/json");
-            request.AddHeader("x-apikey", "297fa1d048dca19fc1003bcfbd601c79f1ef78ec090fd4b9019923beb16d68c2");
+            request.AddHeader("x-apikey", virusTotalKey);
+            //request.AddHeader("x-apikey", "297fa1d048dca19fc1003bcfbd601c79f1ef78ec090fd4b9019923beb16d68c2");
             IRestResponse response = client.Execute(request);
             return JsonConvert.DeserializeObject<VirusTotal>(response.Content);
         }
