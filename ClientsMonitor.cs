@@ -48,8 +48,8 @@ namespace Cyber20ShadowServer
         public string LastWhiteListUpdate { get; set; }
         public string UniqueID { get; set; }
         public string CurrentPublicKey { get; set; }
+        public Nullable<System.DateTime> CreateDate { get; set; }
     
-        public virtual Server Server { get; set; }
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
         public virtual ICollection<ClientsMonitorOriginTable> ClientsMonitorOriginTables { get; set; }
     }

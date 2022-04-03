@@ -5,17 +5,16 @@
     <!-- Diagram content (shape and connector positions) -->
     <edmx:Diagrams>
       <Diagram DiagramId="5beb1229bd644e8ba625fb41ceedcbd6" Name="Diagram1">
-        <EntityTypeShape EntityType="Cyber20ShadowModel.Category" Width="1.5" PointX="3" PointY="24.375" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.ClientsMonitor" Width="1.5" PointX="3" PointY="11.375" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.ClientsMonitorOriginTable" Width="1.5" PointX="5.25" PointY="8.875" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.Group" Width="1.5" PointX="3" PointY="8.125" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTable" Width="1.5" PointX="3" PointY="2.25" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTableCategory" Width="1.5" PointX="5.25" PointY="3.75" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTableUser" Width="1.5" PointX="5.25" PointY="0.75" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.Server" Width="1.5" PointX="0.75" PointY="8.25" />
-        <EntityTypeShape EntityType="Cyber20ShadowModel.User" Width="1.5" PointX="3" PointY="19.75" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.Category" Width="1.5" PointX="3" PointY="14.875" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.ClientsMonitor" Width="1.5" PointX="6" PointY="13.875" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.ClientsMonitorOriginTable" Width="1.5" PointX="8.25" PointY="10" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.Group" Width="1.5" PointX="3" PointY="5.5" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTable" Width="1.5" PointX="3" PointY="8.75" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTableCategory" Width="1.5" PointX="5.25" PointY="10.25" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.OriginTableUser" Width="1.5" PointX="5.25" PointY="7.25" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.Server" Width="1.5" PointX="0.75" PointY="7.75" />
+        <EntityTypeShape EntityType="Cyber20ShadowModel.User" Width="1.5" PointX="3" PointY="0.75" />
         <AssociationConnector Association="Cyber20ShadowModel.FK_OriginTableCategories_Categories" />
-        <AssociationConnector Association="Cyber20ShadowModel.FK_ClientsMonitor_Servers" />
         <AssociationConnector Association="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_ClientsMonitor" />
         <AssociationConnector Association="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_OriginTable" />
         <AssociationConnector Association="Cyber20ShadowModel.FK_Group_Servers" />

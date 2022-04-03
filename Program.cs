@@ -29,14 +29,14 @@ namespace Cyber20ShadowServer
 
         //static readonly bool flag = true;
         private const int VirusTotalRequestRate = 1000;
-        private static void Main(string[] args)
+        private static async Task Main(string[] args)
         {
             try
             {
                 var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
 
 
-                var SuspiciousAppNeedToReport = OriginShadowConnection(user);
+                var SuspiciousAppNeedToReport = await OriginShadowConnection(user);
 
                 if (SuspiciousAppNeedToReport.Any())
                 {
@@ -100,7 +100,7 @@ namespace Cyber20ShadowServer
         //        ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
 
         //}
-        private static IEnumerable<OriginTable> OriginShadowConnection(User user)
+        private static async Task<IEnumerable<OriginTable>> OriginShadowConnection(User user)
         {
             List<Server> Server = new List<Server>();
             List<OriginTable> SuspiciousAppNeedToReport = new List<OriginTable>();
@@ -121,7 +121,7 @@ namespace Cyber20ShadowServer
                             {
                                 try
                                 {
-                                    IEnumerable<OriginTable> InternalStore = STR_Connection(connectionString, server).ToList();
+                                    IEnumerable<OriginTable> InternalStore = Task.Run(() => STR_Connection(connectionString, server)).Result;
                                     Console.WriteLine(InternalStore.Any());
                                     //AddLostApplicationOfGroup(InternalStore);
                                     //List<OriginTable> NeedToRemoved = new List<OriginTable>();
@@ -265,6 +265,7 @@ namespace Cyber20ShadowServer
         }
         private static List<OriginTable> STR_Connection(string connectionString, Server server)
         {
+
             List<OriginTable> InternalStore = new List<OriginTable>();
             try
             {
@@ -412,6 +413,7 @@ namespace Cyber20ShadowServer
                 }
             }
         }
+
         private static List<ClientsMonitor> Cyber20DB_Connection(string connectionString, int serverID)
         {
             List<ClientsMonitor> InternalStore = new List<ClientsMonitor>();
@@ -476,6 +478,7 @@ namespace Cyber20ShadowServer
             }
             return InternalStore;
         }
+
         private static bool UpdateUnSceneOriginTable(IEnumerable<OriginTable> InternalStore)
         {
             //Cyber20ShadowEntities db = new Cyber20ShadowEntities();

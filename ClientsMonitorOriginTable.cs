@@ -16,11 +16,11 @@ namespace Cyber20ShadowServer
     {
         public int ID { get; set; }
         public Nullable<System.DateTime> CreateDate { get; set; }
-        public int OriginTableID { get; set; }
+        public Nullable<int> OriginTableID { get; set; }
         public Nullable<int> ClientsMonitorID { get; set; }
-        public Nullable<bool> IsReported { get; set; }
-        public Nullable<bool> IsWached { get; set; }
         public Nullable<System.DateTime> RequestTime { get; set; }
+        public Nullable<int> UserWached { get; set; }
+        public Nullable<int> UserReported { get; set; }
     
         public virtual ClientsMonitor ClientsMonitor { get; set; }
         public virtual OriginTable OriginTable { get; set; }

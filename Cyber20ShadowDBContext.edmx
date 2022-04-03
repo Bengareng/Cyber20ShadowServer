@@ -51,6 +51,7 @@
           <Property Name="LastWhiteListUpdate" Type="nvarchar" MaxLength="25" />
           <Property Name="UniqueID" Type="nvarchar" MaxLength="230" />
           <Property Name="CurrentPublicKey" Type="nvarchar(max)" />
+          <Property Name="CreateDate" Type="datetime" />
         </EntityType>
         <EntityType Name="ClientsMonitorOriginTable">
           <Key>
@@ -58,11 +59,11 @@
           </Key>
           <Property Name="ID" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
           <Property Name="CreateDate" Type="datetime" />
-          <Property Name="OriginTableID" Type="int" Nullable="false" />
+          <Property Name="OriginTableID" Type="int" />
           <Property Name="ClientsMonitorID" Type="int" />
-          <Property Name="IsReported" Type="bit" />
-          <Property Name="IsWached" Type="bit" />
           <Property Name="RequestTime" Type="datetime" />
+          <Property Name="UserWached" Type="int" />
+          <Property Name="UserReported" Type="int" />
         </EntityType>
         <EntityType Name="Group">
           <Key>
@@ -148,18 +149,6 @@
           <Property Name="ShowStatus" Type="bit" />
           <Property Name="LastPasswordChangedDate" Type="datetime" />
         </EntityType>
-        <Association Name="FK_ClientsMonitor_Servers">
-          <End Role="Servers" Type="Self.Servers" Multiplicity="0..1" />
-          <End Role="ClientsMonitor" Type="Self.ClientsMonitor" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Servers">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="ClientsMonitor">
-              <PropertyRef Name="ServerID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         <Association Name="FK_ClientsMonitorOriginTable_ClientsMonitor">
           <End Role="ClientsMonitor" Type="Self.ClientsMonitor" Multiplicity="0..1" />
           <End Role="ClientsMonitorOriginTable" Type="Self.ClientsMonitorOriginTable" Multiplicity="*" />
@@ -173,7 +162,7 @@
           </ReferentialConstraint>
         </Association>
         <Association Name="FK_ClientsMonitorOriginTable_OriginTable">
-          <End Role="OriginTable" Type="Self.OriginTable" Multiplicity="1" />
+          <End Role="OriginTable" Type="Self.OriginTable" Multiplicity="0..1" />
           <End Role="ClientsMonitorOriginTable" Type="Self.ClientsMonitorOriginTable" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="OriginTable">
@@ -268,10 +257,6 @@
           <EntitySet Name="OriginTableUser" EntityType="Self.OriginTableUser" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="Servers" EntityType="Self.Servers" Schema="dbo" store:Type="Tables" />
           <EntitySet Name="User" EntityType="Self.User" Schema="dbo" store:Type="Tables" />
-          <AssociationSet Name="FK_ClientsMonitor_Servers" Association="Self.FK_ClientsMonitor_Servers">
-            <End Role="Servers" EntitySet="Servers" />
-            <End Role="ClientsMonitor" EntitySet="ClientsMonitor" />
-          </AssociationSet>
           <AssociationSet Name="FK_ClientsMonitorOriginTable_ClientsMonitor" Association="Self.FK_ClientsMonitorOriginTable_ClientsMonitor">
             <End Role="ClientsMonitor" EntitySet="ClientsMonitor" />
             <End Role="ClientsMonitorOriginTable" EntitySet="ClientsMonitorOriginTable" />
@@ -324,10 +309,6 @@
           <AssociationSet Name="FK_OriginTableCategories_Categories" Association="Cyber20ShadowModel.FK_OriginTableCategories_Categories">
             <End Role="Category" EntitySet="Categories" />
             <End Role="OriginTableCategory" EntitySet="OriginTableCategories" />
-          </AssociationSet>
-          <AssociationSet Name="FK_ClientsMonitor_Servers" Association="Cyber20ShadowModel.FK_ClientsMonitor_Servers">
-            <End Role="Server" EntitySet="Servers" />
-            <End Role="ClientsMonitor" EntitySet="ClientsMonitors" />
           </AssociationSet>
           <AssociationSet Name="FK_ClientsMonitorOriginTable_ClientsMonitor" Association="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_ClientsMonitor">
             <End Role="ClientsMonitor" EntitySet="ClientsMonitors" />
@@ -442,7 +423,7 @@
           <Property Name="LastWhiteListUpdate" Type="String" MaxLength="25" FixedLength="false" Unicode="true" />
           <Property Name="UniqueID" Type="String" MaxLength="230" FixedLength="false" Unicode="true" />
           <Property Name="CurrentPublicKey" Type="String" MaxLength="Max" FixedLength="false" Unicode="true" />
-          <NavigationProperty Name="Server" Relationship="Cyber20ShadowModel.FK_ClientsMonitor_Servers" FromRole="ClientsMonitor" ToRole="Server" />
+          <Property Name="CreateDate" Type="DateTime" Precision="3" />
           <NavigationProperty Name="ClientsMonitorOriginTables" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_ClientsMonitor" FromRole="ClientsMonitor" ToRole="ClientsMonitorOriginTable" />
         </EntityType>
         <EntityType Name="ClientsMonitorOriginTable">
@@ -451,11 +432,11 @@
           </Key>
           <Property Name="ID" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
           <Property Name="CreateDate" Type="DateTime" Precision="3" />
-          <Property Name="OriginTableID" Type="Int32" Nullable="false" />
+          <Property Name="OriginTableID" Type="Int32" />
           <Property Name="ClientsMonitorID" Type="Int32" />
-          <Property Name="IsReported" Type="Boolean" />
-          <Property Name="IsWached" Type="Boolean" />
           <Property Name="RequestTime" Type="DateTime" Precision="3" />
+          <Property Name="UserWached" Type="Int32" />
+          <Property Name="UserReported" Type="Int32" />
           <NavigationProperty Name="ClientsMonitor" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_ClientsMonitor" FromRole="ClientsMonitorOriginTable" ToRole="ClientsMonitor" />
           <NavigationProperty Name="OriginTable" Relationship="Cyber20ShadowModel.FK_ClientsMonitorOriginTable_OriginTable" FromRole="ClientsMonitorOriginTable" ToRole="OriginTable" />
         </EntityType>
@@ -536,7 +517,6 @@
           <Property Name="CreateDate" Type="DateTime" Precision="3" />
           <Property Name="UpdateDate" Type="DateTime" Precision="3" />
           <Property Name="IsActive" Type="Boolean" />
-          <NavigationProperty Name="ClientsMonitors" Relationship="Cyber20ShadowModel.FK_ClientsMonitor_Servers" FromRole="Server" ToRole="ClientsMonitor" />
           <NavigationProperty Name="Groups" Relationship="Cyber20ShadowModel.FK_Group_Servers" FromRole="Server" ToRole="Group" />
           <NavigationProperty Name="OriginTables" Relationship="Cyber20ShadowModel.FK_OriginTable_Servers" FromRole="Server" ToRole="OriginTable" />
         </EntityType>
@@ -568,18 +548,6 @@
             </Dependent>
           </ReferentialConstraint>
         </Association>
-        <Association Name="FK_ClientsMonitor_Servers">
-          <End Type="Cyber20ShadowModel.Server" Role="Server" Multiplicity="0..1" />
-          <End Type="Cyber20ShadowModel.ClientsMonitor" Role="ClientsMonitor" Multiplicity="*" />
-          <ReferentialConstraint>
-            <Principal Role="Server">
-              <PropertyRef Name="ID" />
-            </Principal>
-            <Dependent Role="ClientsMonitor">
-              <PropertyRef Name="ServerID" />
-            </Dependent>
-          </ReferentialConstraint>
-        </Association>
         <Association Name="FK_ClientsMonitorOriginTable_ClientsMonitor">
           <End Type="Cyber20ShadowModel.ClientsMonitor" Role="ClientsMonitor" Multiplicity="0..1" />
           <End Type="Cyber20ShadowModel.ClientsMonitorOriginTable" Role="ClientsMonitorOriginTable" Multiplicity="*" />
@@ -593,7 +561,7 @@
           </ReferentialConstraint>
         </Association>
         <Association Name="FK_ClientsMonitorOriginTable_OriginTable">
-          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="1" />
+          <End Type="Cyber20ShadowModel.OriginTable" Role="OriginTable" Multiplicity="0..1" />
           <End Type="Cyber20ShadowModel.ClientsMonitorOriginTable" Role="ClientsMonitorOriginTable" Multiplicity="*" />
           <ReferentialConstraint>
             <Principal Role="OriginTable">
@@ -733,6 +701,7 @@
           <EntitySetMapping Name="ClientsMonitors">
             <EntityTypeMapping TypeName="Cyber20ShadowModel.ClientsMonitor">
               <MappingFragment StoreEntitySet="ClientsMonitor">
+                <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
                 <ScalarProperty Name="CurrentPublicKey" ColumnName="CurrentPublicKey" />
                 <ScalarProperty Name="UniqueID" ColumnName="UniqueID" />
                 <ScalarProperty Name="LastWhiteListUpdate" ColumnName="LastWhiteListUpdate" />
@@ -767,9 +736,9 @@
           <EntitySetMapping Name="ClientsMonitorOriginTables">
             <EntityTypeMapping TypeName="Cyber20ShadowModel.ClientsMonitorOriginTable">
               <MappingFragment StoreEntitySet="ClientsMonitorOriginTable">
+                <ScalarProperty Name="UserReported" ColumnName="UserReported" />
+                <ScalarProperty Name="UserWached" ColumnName="UserWached" />
                 <ScalarProperty Name="RequestTime" ColumnName="RequestTime" />
-                <ScalarProperty Name="IsWached" ColumnName="IsWached" />
-                <ScalarProperty Name="IsReported" ColumnName="IsReported" />
                 <ScalarProperty Name="ClientsMonitorID" ColumnName="ClientsMonitorID" />
                 <ScalarProperty Name="OriginTableID" ColumnName="OriginTableID" />
                 <ScalarProperty Name="CreateDate" ColumnName="CreateDate" />
