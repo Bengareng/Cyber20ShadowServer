@@ -36,7 +36,7 @@ namespace Cyber20ShadowServer
                 var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
 
 
-                var SuspiciousAppNeedToReport = await OriginShadowConnection(user);
+                var SuspiciousAppNeedToReport = await Task.Run(() => OriginShadowConnection(user));
 
                 if (SuspiciousAppNeedToReport.Any())
                 {
@@ -100,7 +100,7 @@ namespace Cyber20ShadowServer
         //        ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
 
         //}
-        private static async Task<IEnumerable<OriginTable>> OriginShadowConnection(User user)
+        private static IEnumerable<OriginTable> OriginShadowConnection(User user)
         {
             List<Server> Server = new List<Server>();
             List<OriginTable> SuspiciousAppNeedToReport = new List<OriginTable>();
@@ -121,7 +121,9 @@ namespace Cyber20ShadowServer
                             {
                                 try
                                 {
-                                    IEnumerable<OriginTable> InternalStore = Task.Run(() => STR_Connection(connectionString, server)).Result;
+                                    var Internal = Task.Run(() => STR_Connection(connectionString, server));
+                                    Internal.Wait();
+                                    var InternalStore = Internal.Result;
                                     Console.WriteLine(InternalStore.Any());
                                     //AddLostApplicationOfGroup(InternalStore);
                                     //List<OriginTable> NeedToRemoved = new List<OriginTable>();
@@ -144,6 +146,7 @@ namespace Cyber20ShadowServer
 
                                         if (nelistNew.Any()) InternalStore = nelistNew;
 
+#if !DEBUG
                                         if (user != null && InternalStore.Any())
                                         {
                                             string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
@@ -171,8 +174,9 @@ namespace Cyber20ShadowServer
                                                     else x.Status = "Unknown";
                                                 });
 
-                                            SuspiciousAppNeedToReport.AddRange(InternalStore.Where(x => x.NumOfEnginesDetected > 2));
+                                                SuspiciousAppNeedToReport.AddRange(InternalStore.Where(x => x.NumOfEnginesDetected > 2));
                                         }
+#endif
 
                                         BulkUploadToSql<OriginTable> objBulk = new BulkUploadToSql<OriginTable>()
                                         {
@@ -247,7 +251,7 @@ namespace Cyber20ShadowServer
                                 db.Servers.Attach(server);
                                 db.Entry(server).State = EntityState.Modified;
 
-                                db.SaveChangesAsync();
+                                db.SaveChanges();
                                 WriteToFile("cyber20ShadowEntities.Servers.Attach(server)");
                             }
                             catch (Exception ex)
