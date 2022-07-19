@@ -31,12 +31,13 @@ namespace Cyber20ShadowServer
         private const int VirusTotalRequestRate = 1000;
         private static async Task Main(string[] args)
         {
+
+
+
+
             try
             {
-                var user = db.Users.FirstOrDefault(x => x.Email == "cyber@cyber20.com");
-
-
-                var SuspiciousAppNeedToReport = await Task.Run(() => OriginShadowConnection(user));
+                var SuspiciousAppNeedToReport = await Task.Run(() => OriginShadowConnection());
 
                 if (SuspiciousAppNeedToReport.Any())
                 {
@@ -100,7 +101,7 @@ namespace Cyber20ShadowServer
         //        ScannAllUnScannedApplicaition(VirusTotalRequestRate - data.Count());
 
         //}
-        private static IEnumerable<OriginTable> OriginShadowConnection(User user)
+        private static IEnumerable<OriginTable> OriginShadowConnection()
         {
             List<Server> Server = new List<Server>();
             List<OriginTable> SuspiciousAppNeedToReport = new List<OriginTable>();
@@ -116,6 +117,8 @@ namespace Cyber20ShadowServer
                         if (server.NextRetentionTime.Value <= DateTime.Now)
                         {
                             connectionString = $"Data Source={server.IPAddress}; Initial Catalog=Cyber20CyberAnalyzerDB; User ID={server.UserName}; Password={server.Password};";
+                            GetClientMonitor(connectionString, server.ID);
+
                             Console.WriteLine(connectionString);
                             try
                             {
@@ -134,28 +137,26 @@ namespace Cyber20ShadowServer
                                         server.LastApplicationsTableID = InternalStore.OrderByDescending(x => x.ID).FirstOrDefault().ID;
                                         Console.WriteLine(server.LastApplicationsTableID);
 
-                                        //.Where(x => !db.OriginTables.Select(s => s.ApplicationMD5).Contains(x.ApplicationMD5)).ToList();
                                         List<OriginTable> nelistNew = new List<OriginTable>();
-                                        //List<OriginTable> nelistOld = new List<OriginTable>();
                                         foreach (var item in InternalStore.GroupBy(x => x.ApplicationMD5, (key, x) => x.FirstOrDefault()))
                                         {
-                                            var vm = db.OriginTables.FirstOrDefault(x => x.ApplicationMD5 == item.ApplicationMD5 && x.Status != "Not Scanned Yet");
+                                            var vm = db.OriginTables.FirstOrDefault(x => x.ApplicationMD5 == item.ApplicationMD5);
                                             if (vm == null)
                                                 nelistNew.Add(item);
                                         }
 
-                                        if (nelistNew.Any()) InternalStore = nelistNew;
+                                        //if (nelistNew.Any()) InternalStore = nelistNew;
 
 #if !DEBUG
-                                        if (user != null && InternalStore.Any())
+                                        if (nelistNew.Any())
                                         {
-                                            string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
-                                            string q = $"SELECT * FROM OriginTableUser WHERE CreateDate >= '{curentTime}' AND UserID = {user.ID} ";
-                                            var scannerByAdministrator = db.Database.SqlQuery<OriginTableUser>(q).ToList().Count();
+                                            //string curentTime = DateTime.Now.ToString("yyyy-MM-dd");
+                                            //string q = $"SELECT * FROM OriginTableUser WHERE CreateDate >= '{curentTime}' AND UserID = {user.ID} ";
+                                            //var scannerByAdministrator = db.Database.SqlQuery<OriginTableUser>(q).ToList().Count();
 
                                             //var scannerByAdministrator = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Date == DateTime.Now.Date);
-                                            if (scannerByAdministrator < VirusTotalRequestRate && !string.IsNullOrEmpty(virusTotalKey))
-                                                InternalStore.ToList().ForEach(x =>
+                                            if (!string.IsNullOrEmpty(virusTotalKey))
+                                                nelistNew.Where(x=> x.Status != "Not Scanned Yet").ToList().ForEach(x =>
                                                 {
                                                     x.ID = 0;
                                                     Data virusTotal = VirusTotalFileReport(x.ApplicationMD5).Data;
@@ -174,46 +175,26 @@ namespace Cyber20ShadowServer
                                                     else x.Status = "Unknown";
                                                 });
 
-                                                SuspiciousAppNeedToReport.AddRange(InternalStore.Where(x => x.NumOfEnginesDetected > 2));
+                                                SuspiciousAppNeedToReport.AddRange(nelistNew.Where(x => x.NumOfEnginesDetected > 2));
                                         }
 #endif
 
                                         BulkUploadToSql<OriginTable> objBulk = new BulkUploadToSql<OriginTable>()
                                         {
-                                            InternalStore = InternalStore,
+                                            InternalStore = nelistNew,
                                             TableName = "OriginTable",
                                             CommitBatchSize = 1000,
                                             ConnectionString = $"Data Source={builder.DataSource}; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
                                         };
 
-                                        UpdateUnSceneOriginTable(InternalStore.Where(x => x.Status != "Not Scanned Yet").ToList());
+                                        UpdateUnSceneOriginTable(nelistNew.Where(x => x.Status != "Not Scanned Yet").ToList());
 
                                         if (objBulk.Commit())
                                         {
                                             WriteToFile("objBulk.Commit()");
 
-
-                                            string q = $"SELECT  TOP({InternalStore.Count()}) * FROM OriginTable WHERE ApplicationMD5 IN('{string.Join("','", InternalStore.Select(x => x.ApplicationMD5))}')  ORDER BY ID DESC";
-                                            var otu = db.Database.SqlQuery<OriginTable>(q).ToList();
-                                            if (user != null)
-                                            {
-                                                var originTableUsers = otu.Select(x => new OriginTableUser
-                                                {
-                                                    CreateDate = DateTime.Now,
-                                                    OriginTableID = x.ID,
-                                                    UserID = user.ID
-                                                }).ToList();
-
-                                                var otuBulk = new BulkUploadToSql<OriginTableUser>()
-                                                {
-                                                    InternalStore = originTableUsers,
-                                                    TableName = "OriginTableUser",
-                                                    CommitBatchSize = 1000,
-                                                    ConnectionString = $"Data Source={builder.DataSource}; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
-                                                }.Commit();
-                                            }
-
                                             string[] groups = InternalStore.GroupBy(x => x.ClientGroup).Select(x => x.Key).ToArray();
+
                                             foreach (string g in groups)
                                             {
                                                 if (!db.Groups.Where(x => x.Name == g).ToList().Any())
@@ -226,13 +207,14 @@ namespace Cyber20ShadowServer
                                                         ServerID = server.ID
                                                     });
                                                     db.SaveChanges();
-
                                                 }
                                             }
 
-                                            InsertClientsMonitorOriginTable(sevingTable, otu, server.ID);
                                         }
 
+                                        string q = $"SELECT  TOP({nelistNew.Count()}) * FROM OriginTable WHERE ApplicationMD5 IN('{string.Join("','", nelistNew.Select(x => x.ApplicationMD5))}')  ORDER BY ID DESC";
+                                        var otu = db.Database.SqlQuery<OriginTable>(q).ToList();
+                                        InsertClientsMonitorOriginTable(sevingTable, otu, server.ID);
 
                                         Server.Add(server);
                                     }
@@ -351,10 +333,53 @@ namespace Cyber20ShadowServer
             query += "INNER JOIN [Cyber20CyberAnalyzerDB].[dbo].[ApplicationsComputersTable] ACT ON AT.ID = ACT.Application ";
             query += "INNER JOIN [Cyber20CyberAnalyzerDB].[dbo].[ComputersTable] CT ON ACT.Computer = CT.UID ";
             query += "INNER JOIN [Cyber20DB].[dbo].[ClientsMonitor] CM on CT.ComputerMAC = CM.ClientMAC AND CM.ClientName = CT.ComputerName";
-            query += $" WHERE AT.ID > {lastID} ORDER BY AT.RequestTime ";
+            //query += $" WHERE   AT.RequestTime >= '2022-06-1' and AT.RequestTime <= '2022-07-1'AND ClientGroup  in ('Sarid') ORDER BY AT.RequestTime ";
+            query += $" WHERE  AT.RequestTime >= '2022-06-1' AND AT.ID > {lastID} ORDER BY AT.RequestTime ";
 
             return query;
 
+        }
+
+
+        static void GetClientMonitor(string serverConnectionString, int serverID)
+        {
+            IEnumerable<ClientsMonitor> NewClientsMonitros = null;
+            IEnumerable<ClientsMonitor> TempOfAllClientsMonitors = null;
+            var _clientsMonitor = Task.Run(() =>
+            {
+                var _clintsMonitorList = Cyber20DB_Connection(serverConnectionString, serverID).ToList();
+                NewClientsMonitros = _clintsMonitorList.Where(x => x.ID == 0).ToList();
+                TempOfAllClientsMonitors = _clintsMonitorList.Where(x => x.ID != 0).ToList();
+            });
+            _clientsMonitor.Wait();
+
+
+
+            if (NewClientsMonitros.Any())
+                _ = new BulkUploadToSql<ClientsMonitor>()
+                {
+                    InternalStore = NewClientsMonitros,
+                    TableName = "ClientsMonitor",
+                    CommitBatchSize = 1000,
+                    //ConnectionString = $"Data Source={builder.DataSource}; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
+                    ConnectionString = db.Database.Connection.ConnectionString.ToString()
+                }.Commit();
+
+            if (TempOfAllClientsMonitors.Any())
+                _ = new BulkUploadToSql<ClientsMonitor>()
+                {
+                    InternalStore = TempOfAllClientsMonitors,
+                    TableName = "ClientsMonitor",
+                    CommitBatchSize = 1000,
+                    //ConnectionString = $"Data Source={builder.DataSource}; Initial Catalog=Cyber20Shadow; User ID=sa; Password=Cyber@123;"
+                    ConnectionString = db.Database.Connection.ConnectionString.ToString()
+                }.BulkUpdateData();
+        }
+
+        static string SqlQueryGetClinetGroups()
+        {
+            string query = "SELECT * FROM [Cyber20DB].[dbo].[ClientsGroups]";
+            return query;
         }
         private static void WriteToFile(string Message)
         {
@@ -369,7 +394,7 @@ namespace Cyber20ShadowServer
                 // Create a file to write to.
                 using (StreamWriter sw = System.IO.File.CreateText(filepath))
                 {
-                    sw.WriteLine($"[{DateTime.Now.ToString()}] - {Message}");
+                    sw.WriteLine($"[{DateTime.Now}] - {Message}");
                 }
             }
             else
@@ -428,7 +453,9 @@ namespace Cyber20ShadowServer
                     conn.Open();
                     string query = "";
                     //query += "DBCC CHECKIDENT ('[TestTable]', RESEED, 0); ";
-                    query += "SELECT * FROM [Cyber20DB].[dbo].[ClientsMonitor] ORDER BY TIMESTAMP DESC;";
+                    query += "SELECT * FROM [Cyber20DB].[dbo].[ClientsMonitor] " +
+                        "WHERE TIMESTAMP >= DATEADD(day,-2, getdate()) " +
+                        "ORDER BY TIMESTAMP DESC;";
                     // 1.  create a command object identifying the stored procedure
                     SqlCommand cmd = new SqlCommand(query, conn);
 
@@ -444,17 +471,23 @@ namespace Cyber20ShadowServer
                         // iterate through results, printing each to console
                         while (rdr.Read())
                         {
+
+
                             var ClientsMonitor = new ClientsMonitor
                             {
                                 ServerID = serverID,
                                 TimeStamp = DateTime.Parse(rdr["TimeStamp"].ToString()),
+                                ClientName = rdr["ClientName"].ToString(),
                                 ClientIP = rdr["ClientIP"].ToString(),
                                 ClientMAC = rdr["ClientMAC"].ToString(),
+                                GUID = rdr["GUID"].ToString(),
                                 LogedInUser = rdr["LogedInUser"].ToString(),
                                 ClientStatus = rdr["ClientStatus"].ToString(),
                                 CertificateStatus = rdr["CertificateStatus"].ToString(),
+                                CurrentPublicKey = rdr["CurrentPublicKey"].ToString(),
                                 WhiteListVersion = rdr["WhiteListVersion"].ToString(),
                                 ConnectionStatus = rdr["ConnectionStatus"].ToString(),
+                                UniqueID = rdr["UniqueID"].ToString(),
                                 UIVersion = rdr["UIVersion"].ToString(),
                                 DriverVersion = rdr["DriverVersion"].ToString(),
                                 ClientOSVersion = rdr["ClientOSVersion"].ToString(),
@@ -466,8 +499,17 @@ namespace Cyber20ShadowServer
                                 LastWhiteListDataInsert = rdr["LastWhiteListDataInsert"].ToString(),
                                 ClientDescription = rdr["ClientDescription"].ToString(),
                                 ClientGroup = rdr["ClientGroup"].ToString(),
-                                ClientName = rdr["ClientName"].ToString()
+                                IsScrambledRequired = int.Parse(rdr["IsScrambledRequired"].ToString()),
+                                LastCertificateUpdate = rdr["LastCertificateUpdate"].ToString(),
+                                LastWhiteListUpdate = rdr["LastWhiteListUpdate"].ToString(),
+                                CreateDate = DateTime.Now
+
+
                             };
+
+
+                            var _clientMonitor = db.ClientsMonitors.FirstOrDefault(f => f.UniqueID == ClientsMonitor.UniqueID);
+                            if (_clientMonitor != null) ClientsMonitor.ID = _clientMonitor.ID;
 
                             InternalStore.Add(ClientsMonitor);
                         }
@@ -529,11 +571,13 @@ namespace Cyber20ShadowServer
         static void InsertClientsMonitorOriginTable(IEnumerable<OriginTable> sevingTable, IEnumerable<OriginTable> newServer, int serverID)
         {
             //Cyber20ShadowEntities db = new Cyber20ShadowEntities();
+            List<OriginTable> _ot = new List<OriginTable>();
+            List<ClientsMonitorOriginTable> clientsMonitorOriginTables = new List<ClientsMonitorOriginTable>();
             sevingTable.ToList().ForEach(x =>
             {
                 OriginTable data = newServer.FirstOrDefault(s => s.ApplicationMD5 == x.ApplicationMD5);
                 if (data != null)
-                    x.ID = data.ID;
+                    x = data;
                 else
                 {
                     data = db.OriginTables.FirstOrDefault(s => s.ApplicationMD5 == x.ApplicationMD5);
@@ -541,16 +585,11 @@ namespace Cyber20ShadowServer
                         x.ID = data.ID;
                 }
 
+                var sdf = db.ClientsMonitors.FirstOrDefault(cm => cm.ClientGroup == x.ClientGroup && cm.ClientName == x.ComputerName && cm.ConnectionStatus == "Online");
+                if (sdf != null) clientsMonitorOriginTables.Add(new ClientsMonitorOriginTable { OriginTableID = data.ID, ClientsMonitorID = sdf.ID, CreateDate = DateTime.Now, RequestTime = x.RequestTime });
+                else _ot.Add(x);
+
             });
-
-            List<ClientsMonitorOriginTable> clientsMonitorOriginTables = new List<ClientsMonitorOriginTable>();
-            //var lastInsert = db.OriginTables.OrderByDescending(s => new { s.CreateDate }).Take(InternalStore.Count()).ToList();
-
-            foreach (var item in sevingTable)
-            {
-                var sdf = db.ClientsMonitors.FirstOrDefault(x => x.ClientGroup == item.ClientGroup && x.ClientName == item.ComputerName && x.ServerID == serverID && x.ConnectionStatus == "Online");
-                if (sdf != null) clientsMonitorOriginTables.Add(new ClientsMonitorOriginTable { OriginTableID = item.ID, ClientsMonitorID = sdf.ID, CreateDate = DateTime.Now, RequestTime = item.RequestTime });
-            }
 
 
             if (clientsMonitorOriginTables.Any())

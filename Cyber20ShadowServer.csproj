@@ -52,6 +52,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="BinarySearchExtension, Version=1.0.0.0, Culture=neutral, PublicKeyToken=7480472f855cba46, processorArchitecture=MSIL">
+      <HintPath>packages\BinarySearchExtension.1.0.0.0\lib\net40\BinarySearchExtension.dll</HintPath>
+    </Reference>
     <Reference Include="Costura, Version=5.7.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Costura.Fody.5.7.0\lib\netstandard1.0\Costura.dll</HintPath>
     </Reference>
