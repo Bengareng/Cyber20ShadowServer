@@ -156,7 +156,7 @@ namespace Cyber20ShadowServer
 
                                             //var scannerByAdministrator = db.OriginTableUsers.Count(x => x.ID == user.ID && x.CreateDate.Value.Date == DateTime.Now.Date);
                                             if (!string.IsNullOrEmpty(virusTotalKey))
-                                                nelistNew.Where(x=> x.Status != "Not Scanned Yet").ToList().ForEach(x =>
+                                                nelistNew.Where(x=> x.Status == "Not Scanned Yet").ToList().ForEach(x =>
                                                 {
                                                     x.ID = 0;
                                                     Data virusTotal = VirusTotalFileReport(x.ApplicationMD5).Data;
